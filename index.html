@@ -1016,8 +1016,8 @@
     <div class="drop-zone" id="dropZone">
       <div class="drop-zone-icon">📸</div>
       <h3 id="dropZoneTitle">Drop photos here or click to browse</h3>
-      <p>Supports JPG, PNG, WebP, BMP, TIFF</p>
-      <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff">
+      <p>Supports JPG, PNG, WebP, BMP, TIFF, HEIC</p>
+      <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.heic,.heif">
     </div>
 
     <!-- Privacy badge -->
@@ -1182,6 +1182,7 @@
   <!-- Toast container -->
   <div class="toast-container" id="toastContainer"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
   <script>
     // --- Browser detection ---
     const hasFileSystemAccess = ('showDirectoryPicker' in window);
@@ -1289,13 +1290,25 @@
 
     // Supported MIME types
     const SUPPORTED = new Set([
-      'image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff'
+      'image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff',
+      'image/heic', 'image/heif'
     ]);
 
     function isSupportedFile(file) {
       if (SUPPORTED.has(file.type)) return true;
       const ext = file.name.split('.').pop().toLowerCase();
-      return ['jpg','jpeg','png','webp','bmp','tif','tiff'].includes(ext);
+      return ['jpg','jpeg','png','webp','bmp','tif','tiff','heic','heif'].includes(ext);
+    }
+
+    function isHeicFile(file) {
+      if (file.type === 'image/heic' || file.type === 'image/heif') return true;
+      const ext = file.name.split('.').pop().toLowerCase();
+      return ext === 'heic' || ext === 'heif';
+    }
+
+    async function convertHeicToJpeg(file) {
+      const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.95 });
+      return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
     }
 
     // --- Toast Notifications ---
@@ -1558,14 +1571,19 @@
       let processed = 0, skipped = 0, failed = 0;
 
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+        let file = files[i];
         const statusEl = document.getElementById(`status-${i}`);
         if (statusEl) {
           statusEl.className = 'file-status processing';
-          statusEl.textContent = 'Resizing...';
+          statusEl.textContent = isHeicFile(file) ? 'Converting HEIC...' : 'Resizing...';
         }
 
         try {
+          // Convert HEIC/HEIF to JPEG first
+          if (isHeicFile(file)) {
+            file = await convertHeicToJpeg(file);
+            if (statusEl) statusEl.textContent = 'Resizing...';
+          }
           const result = await resizeImage(file, targetWidth, outputFormat, quality, suffix, upscaleSmall);
           if (result.skipped) {
             skipped++;
@@ -1684,9 +1702,9 @@
           if (outputFormat === 'original') {
             mime = file.type || 'image/jpeg';
             ext = file.name.split('.').pop().toLowerCase();
-            if (ext === 'tif' || ext === 'tiff' || ext === 'bmp') {
-              mime = 'image/png';
-              ext = 'png';
+            if (ext === 'tif' || ext === 'tiff' || ext === 'bmp' || ext === 'heic' || ext === 'heif') {
+              mime = 'image/jpeg';
+              ext = 'jpg';
             }
           } else {
             mime = outputFormat;
