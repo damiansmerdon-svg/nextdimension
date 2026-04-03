@@ -225,6 +225,27 @@
       flex-wrap: wrap;
     }
 
+    .panel-divider {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--border);
+      margin: 4px 0 0;
+    }
+
+    .bottom-row {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .save-dest-inline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .checkbox-label {
       display: flex;
       align-items: center;
@@ -1023,7 +1044,6 @@
 
     /* Advanced section */
     .advanced-toggle-btn {
-      grid-column: 1 / -1;
       background: none;
       border: 1px dashed var(--border);
       border-radius: 8px;
@@ -1033,6 +1053,7 @@
       cursor: pointer;
       transition: all 0.2s;
       text-align: left;
+      white-space: nowrap;
     }
 
     .advanced-toggle-btn:hover {
@@ -1363,7 +1384,7 @@
         <label>Color Enhance</label>
         <select id="colorEnhance">
           <option value="off">None</option>
-          <option value="subtle">Subtle</option>
+          <option value="auto">Auto</option>
           <option value="vivid">Vivid</option>
         </select>
       </div>
@@ -1376,13 +1397,21 @@
           </label>
         </div>
       </div>
-      <div class="checkbox-row" id="upscaleRow">
-        <label class="checkbox-label">
+      <div class="option-group upscale-group" id="upscaleRow">
+        <label>&nbsp;</label>
+        <label class="checkbox-label" style="padding-top:6px">
           <input type="checkbox" id="upscaleSmall">
           Upscale smaller images
         </label>
       </div>
-      <button type="button" class="advanced-toggle-btn" id="advancedToggle">▸ Advanced</button>
+      <div class="panel-divider"></div>
+      <div class="bottom-row">
+        <button type="button" class="advanced-toggle-btn" id="advancedToggle">▸ Advanced</button>
+        <div class="save-dest-inline">
+          <button type="button" class="btn-folder" id="btnChooseFolder">📁 Choose folder…</button>
+          <span class="folder-path" id="folderPath" style="display:none"></span>
+        </div>
+      </div>
       <div class="advanced-section" id="advancedSection">
         <div class="dpi-group">
           <label>DPI</label>
@@ -1392,13 +1421,6 @@
             <button type="button" class="dpi-preset" data-dpi="150">150</button>
             <button type="button" class="dpi-preset" data-dpi="300">300</button>
           </div>
-        </div>
-      </div>
-      <div class="save-dest-row">
-        <label>Save Folder</label>
-        <div class="save-options">
-          <button type="button" class="btn-folder" id="btnChooseFolder">📁 Choose folder…</button>
-          <span class="folder-path" id="folderPath" style="display:none"></span>
         </div>
       </div>
     </div>
@@ -2246,40 +2268,215 @@
     }
 
     // --- Color Enhancement ---
+    function hue2rgb(p, q, t) {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+      if (max === min) { h = s = 0; }
+      else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        else if (max === g) h = ((b - r) / d + 2) / 6;
+        else h = ((r - g) / d + 4) / 6;
+      }
+      return [h, s, l];
+    }
+
+    function hslToRgb(h, s, l) {
+      if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      return [
+        Math.round(hue2rgb(p, q, h + 1/3) * 255),
+        Math.round(hue2rgb(p, q, h) * 255),
+        Math.round(hue2rgb(p, q, h - 1/3) * 255)
+      ];
+    }
+
     function autoEnhance(ctx, width, height, strength) {
       const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
       const totalPixels = width * height;
 
-      // Settings per strength
-      const clipLo = strength === 'vivid' ? 0.005 : 0.01;
-      const clipHi = strength === 'vivid' ? 0.995 : 0.99;
-      const satBoost = strength === 'vivid' ? 1.25 : 1.10;
+      if (strength === 'vivid') {
+        // --- Vivid: aggressive always-boost ---
+        autoEnhanceVivid(data, totalPixels);
+        ctx.putImageData(imageData, 0, 0);
+        return;
+      }
 
-      // Build histograms for R, G, B
+      // --- Auto: full adaptive pipeline ---
+
+      // Pass 1: Analyze the image
+      const histR = new Uint32Array(256);
+      const histG = new Uint32Array(256);
+      const histB = new Uint32Array(256);
+      let lumSum = 0, satSum = 0, lumSqSum = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i+1], b = data[i+2];
+        histR[r]++;
+        histG[g]++;
+        histB[b]++;
+        const [h, s, l] = rgbToHsl(r, g, b);
+        lumSum += l;
+        satSum += s;
+        lumSqSum += l * l;
+      }
+
+      const avgLum = lumSum / totalPixels;
+      const avgSat = satSum / totalPixels;
+      const lumVariance = (lumSqSum / totalPixels) - (avgLum * avgLum);
+      const lumStdDev = Math.sqrt(Math.max(0, lumVariance)) * 255;
+
+      // Step 1: Auto-levels (exposure + white balance)
+      function getClipRange(hist, clipLoPct, clipHiPct) {
+        const lo = Math.floor(totalPixels * clipLoPct);
+        const hi = Math.floor(totalPixels * clipHiPct);
+        let cumLo = 0, cumHi = 0, minVal = 0, maxVal = 255;
+        for (let i = 0; i < 256; i++) { cumLo += hist[i]; if (cumLo >= lo) { minVal = i; break; } }
+        for (let i = 255; i >= 0; i--) { cumHi += hist[i]; if (cumHi >= (totalPixels - hi)) { maxVal = i; break; } }
+        if (maxVal <= minVal) maxVal = minVal + 1;
+        return [minVal, maxVal];
+      }
+
+      const [rMin, rMax] = getClipRange(histR, 0.01, 0.99);
+      const [gMin, gMax] = getClipRange(histG, 0.01, 0.99);
+      const [bMin, bMax] = getClipRange(histB, 0.01, 0.99);
+
+      const lutR = new Uint8Array(256);
+      const lutG = new Uint8Array(256);
+      const lutB = new Uint8Array(256);
+      for (let i = 0; i < 256; i++) {
+        lutR[i] = Math.max(0, Math.min(255, Math.round((i - rMin) / (rMax - rMin) * 255)));
+        lutG[i] = Math.max(0, Math.min(255, Math.round((i - gMin) / (gMax - gMin) * 255)));
+        lutB[i] = Math.max(0, Math.min(255, Math.round((i - bMin) / (bMax - bMin) * 255)));
+      }
+
+      // Step 2: Adaptive contrast (S-curve)
+      let contrastLut = null;
+      if (lumStdDev < 45) {
+        // Low contrast — add punch
+        const strength = Math.min(0.3, (45 - lumStdDev) / 100);
+        contrastLut = new Uint8Array(256);
+        for (let i = 0; i < 256; i++) {
+          const x = i / 255;
+          const curved = x < 0.5
+            ? 0.5 * Math.pow(2 * x, 1 + strength * 3)
+            : 1 - 0.5 * Math.pow(2 * (1 - x), 1 + strength * 3);
+          contrastLut[i] = Math.max(0, Math.min(255, Math.round(curved * 255)));
+        }
+      } else if (lumStdDev > 70) {
+        // High contrast — soften
+        const strength = Math.min(0.25, (lumStdDev - 70) / 120);
+        contrastLut = new Uint8Array(256);
+        for (let i = 0; i < 256; i++) {
+          const x = i / 255;
+          const curved = x < 0.5
+            ? 0.5 * Math.pow(2 * x, 1 / (1 + strength * 2))
+            : 1 - 0.5 * Math.pow(2 * (1 - x), 1 / (1 + strength * 2));
+          contrastLut[i] = Math.max(0, Math.min(255, Math.round(curved * 255)));
+        }
+      }
+
+      // Step 3: Adaptive gamma
+      let gamma = 1.0;
+      if (avgLum < 0.35) gamma = 0.75 + (avgLum / 0.35) * 0.25; // 0.75–1.0
+      else if (avgLum > 0.65) gamma = 1.0 + ((avgLum - 0.65) / 0.35) * 0.25; // 1.0–1.25
+
+      const gammaLut = new Uint8Array(256);
+      for (let i = 0; i < 256; i++) {
+        gammaLut[i] = Math.max(0, Math.min(255, Math.round(Math.pow(i / 255, gamma) * 255)));
+      }
+
+      // Step 4 & 5: Determine saturation adjustment
+      let satTarget;
+      if (avgSat < 0.25) satTarget = 0.30;
+      else if (avgSat > 0.45) satTarget = 0.40;
+      else satTarget = avgSat; // no change
+
+      const satMul = avgSat > 0.01 ? (satTarget / avgSat) : 1.0;
+
+      // Pass 2: Apply all corrections
+      for (let i = 0; i < data.length; i += 4) {
+        // Step 1: Auto-levels
+        let r = lutR[data[i]];
+        let g = lutG[data[i+1]];
+        let b = lutB[data[i+2]];
+
+        // Step 2: Contrast curve
+        if (contrastLut) {
+          r = contrastLut[r];
+          g = contrastLut[g];
+          b = contrastLut[b];
+        }
+
+        // Step 3: Gamma
+        if (gamma !== 1.0) {
+          r = gammaLut[r];
+          g = gammaLut[g];
+          b = gammaLut[b];
+        }
+
+        // Convert to HSL for saturation + shadow/highlight
+        let [h, s, l] = rgbToHsl(r, g, b);
+
+        // Step 4: Shadow & highlight recovery
+        if (l < 0.15) {
+          const lift = (0.15 - l) * 0.3;
+          l = l + lift;
+        } else if (l > 0.90) {
+          const pull = (l - 0.90) * 0.3;
+          l = l - pull;
+        }
+
+        // Step 5: Adaptive saturation
+        if (satMul !== 1.0 && s > 0) {
+          // Step 6: Skin tone protection — half strength on skin hues
+          const hDeg = h * 360;
+          const isSkinTone = hDeg >= 15 && hDeg <= 45 && s > 0.15 && l > 0.2 && l < 0.8;
+          const effectiveMul = isSkinTone ? 1.0 + (satMul - 1.0) * 0.5 : satMul;
+          s = Math.min(1, Math.max(0, s * effectiveMul));
+        }
+
+        l = Math.max(0, Math.min(1, l));
+        const [nr, ng, nb] = hslToRgb(h, s, l);
+        data[i] = nr;
+        data[i+1] = ng;
+        data[i+2] = nb;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    // Vivid: aggressive always-boost
+    function autoEnhanceVivid(data, totalPixels) {
       const histR = new Uint32Array(256);
       const histG = new Uint32Array(256);
       const histB = new Uint32Array(256);
 
       for (let i = 0; i < data.length; i += 4) {
         histR[data[i]]++;
-        histG[data[i + 1]]++;
-        histB[data[i + 2]]++;
+        histG[data[i+1]]++;
+        histB[data[i+2]]++;
       }
 
-      // Find percentile clipping values
       function getClipRange(hist) {
-        const lo = Math.floor(totalPixels * clipLo);
-        const hi = Math.floor(totalPixels * clipHi);
+        const lo = Math.floor(totalPixels * 0.005);
+        const hi = Math.floor(totalPixels * 0.995);
         let cumLo = 0, cumHi = 0, minVal = 0, maxVal = 255;
-        for (let i = 0; i < 256; i++) {
-          cumLo += hist[i];
-          if (cumLo >= lo) { minVal = i; break; }
-        }
-        for (let i = 255; i >= 0; i--) {
-          cumHi += hist[i];
-          if (cumHi >= (totalPixels - hi)) { maxVal = i; break; }
-        }
+        for (let i = 0; i < 256; i++) { cumLo += hist[i]; if (cumLo >= lo) { minVal = i; break; } }
+        for (let i = 255; i >= 0; i--) { cumHi += hist[i]; if (cumHi >= (totalPixels - hi)) { maxVal = i; break; } }
         if (maxVal <= minVal) maxVal = minVal + 1;
         return [minVal, maxVal];
       }
@@ -2288,57 +2485,26 @@
       const [gMin, gMax] = getClipRange(histG);
       const [bMin, bMax] = getClipRange(histB);
 
-      // Build lookup tables for auto-levels
       const lutR = new Uint8Array(256);
       const lutG = new Uint8Array(256);
       const lutB = new Uint8Array(256);
-
       for (let i = 0; i < 256; i++) {
         lutR[i] = Math.max(0, Math.min(255, Math.round((i - rMin) / (rMax - rMin) * 255)));
         lutG[i] = Math.max(0, Math.min(255, Math.round((i - gMin) / (gMax - gMin) * 255)));
         lutB[i] = Math.max(0, Math.min(255, Math.round((i - bMin) / (bMax - bMin) * 255)));
       }
 
-      // Apply auto-levels + saturation boost
       for (let i = 0; i < data.length; i += 4) {
         let r = lutR[data[i]];
-        let g = lutG[data[i + 1]];
-        let b = lutB[data[i + 2]];
-
-        // Saturation boost via HSL
-        const max = Math.max(r, g, b), min = Math.min(r, g, b);
-        const l = (max + min) / 510; // 0-1
-        if (max !== min && satBoost !== 1) {
-          const d = max - min;
-          let s = l > 0.5 ? d / (510 - max - min) : d / (max + min);
-          s = Math.min(1, s * satBoost);
-          let h;
-          if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-          else if (max === g) h = ((b - r) / d + 2) / 6;
-          else h = ((r - g) / d + 4) / 6;
-
-          // HSL to RGB
-          const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-          const p = 2 * l - q;
-          function hue2rgb(p, q, t) {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
-            if (t < 1/6) return p + (q - p) * 6 * t;
-            if (t < 1/2) return q;
-            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-            return p;
-          }
-          r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
-          g = Math.round(hue2rgb(p, q, h) * 255);
-          b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
-        }
-
-        data[i] = r;
-        data[i + 1] = g;
-        data[i + 2] = b;
+        let g = lutG[data[i+1]];
+        let b = lutB[data[i+2]];
+        let [h, s, l] = rgbToHsl(r, g, b);
+        s = Math.min(1, s * 1.25);
+        const [nr, ng, nb] = hslToRgb(h, s, l);
+        data[i] = nr;
+        data[i+1] = ng;
+        data[i+2] = nb;
       }
-
-      ctx.putImageData(imageData, 0, 0);
     }
 
     // --- DPI Injection ---
