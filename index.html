@@ -1356,8 +1356,16 @@
         </select>
       </div>
       <div class="option-group">
-        <label>JPG / WebP Quality</label>
+        <label>Compression</label>
         <input type="number" id="quality" value="92" min="10" max="100">
+      </div>
+      <div class="option-group">
+        <label>Color Enhance</label>
+        <select id="colorEnhance">
+          <option value="off">None</option>
+          <option value="subtle">Subtle</option>
+          <option value="vivid">Vivid</option>
+        </select>
       </div>
       <div class="option-group">
         <label>Filename Suffix</label>
@@ -1427,7 +1435,19 @@
     <article class="modal">
       <button class="modal-close" id="closeHelp" type="button">&times;</button>
       <h2>Why NextDimension?</h2>
-      <p>A fast, free batch photo resizer built for motion designers and video editors. Drop your oversized photos, set a target width, and get properly sized images in seconds — no uploads, no installs, no accounts.</p>
+      <p>A fast, free batch photo resizer built for motion designers and video editors. Drop your oversized photos, set your options, and get properly sized images in seconds — no uploads, no installs, no accounts.</p>
+
+      <h3>Features</h3>
+      <ul>
+        <li><strong>4 resize modes</strong> — By Width, By Height, By Percentage, or Compress Only</li>
+        <li><strong>Per-image crop</strong> — Free, 1:1, 16:9, or 9:16 aspect ratios</li>
+        <li><strong>Color Enhance</strong> — None, Subtle, or Vivid auto color grading</li>
+        <li><strong>Custom DPI</strong> — Set output DPI (72 / 150 / 300) under Advanced</li>
+        <li><strong>Format conversion</strong> — JPG, PNG, WebP output with compression control</li>
+        <li><strong>HEIC/HEIF support</strong> — iPhone photos converted automatically</li>
+        <li><strong>Batch processing</strong> — Drop dozens of photos, save to a folder or download</li>
+        <li><strong>100% private</strong> — Everything runs in your browser, nothing is uploaded</li>
+      </ul>
 
       <h3>Which browsers work best?</h3>
       <p>Folder-save and auto-resize use the File System Access API, available in Chrome, Edge, and Opera. Firefox and Safari fall back to individual file downloads.</p>
@@ -2006,6 +2026,7 @@
       const suffix = noSuffix ? '' : (document.getElementById('suffix').value || '_w2500');
       const upscaleSmall = document.getElementById('upscaleSmall').checked;
       const dpi = parseInt(dpiInput.value) || 72;
+      const colorEnhance = document.getElementById('colorEnhance').value;
 
       let processed = 0, skipped = 0, failed = 0;
 
@@ -2037,7 +2058,7 @@
               continue;
             }
           }
-          const result = await resizeImage(file, mode, targetDim, targetPct, outputFormat, quality, suffix, upscaleSmall, dpi);
+          const result = await resizeImage(file, mode, targetDim, targetPct, outputFormat, quality, suffix, upscaleSmall, dpi, colorEnhance);
           if (result.skipped) {
             skipped++;
             if (statusEl) {
@@ -2122,7 +2143,7 @@
       }
     }
 
-    function resizeImage(file, mode, targetDim, targetPct, outputFormat, quality, suffix, upscaleSmall, dpi) {
+    function resizeImage(file, mode, targetDim, targetPct, outputFormat, quality, suffix, upscaleSmall, dpi, colorEnhance) {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
@@ -2174,6 +2195,11 @@
 
           URL.revokeObjectURL(img.src);
 
+          // Apply color enhancement if enabled
+          if (colorEnhance && colorEnhance !== 'off') {
+            autoEnhance(ctx, newW, newH, colorEnhance);
+          }
+
           // Determine output MIME and extension
           let mime, ext;
           if (outputFormat === 'original') {
@@ -2217,6 +2243,102 @@
 
         img.src = URL.createObjectURL(file);
       });
+    }
+
+    // --- Color Enhancement ---
+    function autoEnhance(ctx, width, height, strength) {
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      const totalPixels = width * height;
+
+      // Settings per strength
+      const clipLo = strength === 'vivid' ? 0.005 : 0.01;
+      const clipHi = strength === 'vivid' ? 0.995 : 0.99;
+      const satBoost = strength === 'vivid' ? 1.25 : 1.10;
+
+      // Build histograms for R, G, B
+      const histR = new Uint32Array(256);
+      const histG = new Uint32Array(256);
+      const histB = new Uint32Array(256);
+
+      for (let i = 0; i < data.length; i += 4) {
+        histR[data[i]]++;
+        histG[data[i + 1]]++;
+        histB[data[i + 2]]++;
+      }
+
+      // Find percentile clipping values
+      function getClipRange(hist) {
+        const lo = Math.floor(totalPixels * clipLo);
+        const hi = Math.floor(totalPixels * clipHi);
+        let cumLo = 0, cumHi = 0, minVal = 0, maxVal = 255;
+        for (let i = 0; i < 256; i++) {
+          cumLo += hist[i];
+          if (cumLo >= lo) { minVal = i; break; }
+        }
+        for (let i = 255; i >= 0; i--) {
+          cumHi += hist[i];
+          if (cumHi >= (totalPixels - hi)) { maxVal = i; break; }
+        }
+        if (maxVal <= minVal) maxVal = minVal + 1;
+        return [minVal, maxVal];
+      }
+
+      const [rMin, rMax] = getClipRange(histR);
+      const [gMin, gMax] = getClipRange(histG);
+      const [bMin, bMax] = getClipRange(histB);
+
+      // Build lookup tables for auto-levels
+      const lutR = new Uint8Array(256);
+      const lutG = new Uint8Array(256);
+      const lutB = new Uint8Array(256);
+
+      for (let i = 0; i < 256; i++) {
+        lutR[i] = Math.max(0, Math.min(255, Math.round((i - rMin) / (rMax - rMin) * 255)));
+        lutG[i] = Math.max(0, Math.min(255, Math.round((i - gMin) / (gMax - gMin) * 255)));
+        lutB[i] = Math.max(0, Math.min(255, Math.round((i - bMin) / (bMax - bMin) * 255)));
+      }
+
+      // Apply auto-levels + saturation boost
+      for (let i = 0; i < data.length; i += 4) {
+        let r = lutR[data[i]];
+        let g = lutG[data[i + 1]];
+        let b = lutB[data[i + 2]];
+
+        // Saturation boost via HSL
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const l = (max + min) / 510; // 0-1
+        if (max !== min && satBoost !== 1) {
+          const d = max - min;
+          let s = l > 0.5 ? d / (510 - max - min) : d / (max + min);
+          s = Math.min(1, s * satBoost);
+          let h;
+          if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+          else if (max === g) h = ((b - r) / d + 2) / 6;
+          else h = ((r - g) / d + 4) / 6;
+
+          // HSL to RGB
+          const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+          const p = 2 * l - q;
+          function hue2rgb(p, q, t) {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+          }
+          r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+          g = Math.round(hue2rgb(p, q, h) * 255);
+          b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+        }
+
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = b;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
     }
 
     // --- DPI Injection ---
