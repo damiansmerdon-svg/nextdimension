@@ -993,6 +993,108 @@
       color: var(--warning);
     }
 
+    .footer-row-full {
+      grid-template-columns: 1fr;
+    }
+
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .contact-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .contact-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .contact-field label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .contact-field input,
+    .contact-field textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+    }
+
+    .contact-field input:focus,
+    .contact-field textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .contact-field input::placeholder,
+    .contact-field textarea::placeholder {
+      color: var(--text-dim);
+      opacity: 0.5;
+    }
+
+    .contact-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-contact-submit {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-contact-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .btn-contact-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .contact-status {
+      font-size: 0.85rem;
+    }
+
+    .contact-status.success {
+      color: var(--success);
+    }
+
+    .contact-status.error {
+      color: var(--danger);
+    }
+
+    @media (max-width: 600px) {
+      .contact-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .footer-copy {
       text-align: center;
       font-size: 0.75rem;
@@ -1571,6 +1673,35 @@
       </section>
     </div>
 
+    <div class="footer-row footer-row-full">
+      <section class="footer-section footer-contact">
+        <h3>Contact</h3>
+        <p>Got a question, feature request, or bug report? Drop me a message.</p>
+        <form id="contactForm" class="contact-form">
+          <input type="hidden" name="access_key" value="ba3ecb48-09ef-4d7f-b94e-808a21a91b6f">
+          <input type="hidden" name="subject" value="NextDimension Contact Form">
+          <div class="contact-row">
+            <div class="contact-field">
+              <label for="contactName">Name</label>
+              <input type="text" id="contactName" name="name" required placeholder="Your name">
+            </div>
+            <div class="contact-field">
+              <label for="contactEmail">Email</label>
+              <input type="email" id="contactEmail" name="email" required placeholder="you@example.com">
+            </div>
+          </div>
+          <div class="contact-field">
+            <label for="contactMessage">Message</label>
+            <textarea id="contactMessage" name="message" required placeholder="What's on your mind?" rows="4"></textarea>
+          </div>
+          <div class="contact-actions">
+            <button type="submit" class="btn-contact-submit" id="btnContactSubmit">Send Message</button>
+            <span class="contact-status" id="contactStatus"></span>
+          </div>
+        </form>
+      </section>
+    </div>
+
     <div class="footer-copy">
       <a href="https://hits.sh/damiansmerdon-svg.github.io/nextdimension/" target="_blank" rel="noopener" style="opacity:0.5;transition:opacity 0.2s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='0.5'">
         <img alt="Visitors" src="https://hits.sh/damiansmerdon-svg.github.io/nextdimension.svg?style=flat&label=visitors&color=6c5ce7&labelColor=1a1d27" style="height:20px;vertical-align:middle">
@@ -1742,6 +1873,42 @@
 
     bigPictureModal.addEventListener('click', e => {
       if (e.target === bigPictureModal) closeBigPictureModal();
+    });
+
+    // --- Contact Form ---
+    const contactForm = document.getElementById('contactForm');
+    const contactStatus = document.getElementById('contactStatus');
+    const btnContactSubmit = document.getElementById('btnContactSubmit');
+
+    contactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btnContactSubmit.disabled = true;
+      btnContactSubmit.textContent = 'Sending...';
+      contactStatus.textContent = '';
+      contactStatus.className = 'contact-status';
+
+      try {
+        const formData = new FormData(contactForm);
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+          contactStatus.textContent = '✓ Message sent!';
+          contactStatus.className = 'contact-status success';
+          contactForm.reset();
+        } else {
+          throw new Error(data.message || 'Submission failed');
+        }
+      } catch (err) {
+        contactStatus.textContent = 'Failed to send — please try again.';
+        contactStatus.className = 'contact-status error';
+        console.error('Contact form error:', err);
+      }
+
+      btnContactSubmit.disabled = false;
+      btnContactSubmit.textContent = 'Send Message';
     });
 
     // First visit tracking (no auto-show)
