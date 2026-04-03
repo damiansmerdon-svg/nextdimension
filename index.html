@@ -1182,8 +1182,7 @@
   <!-- Toast container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-  <script>if(typeof heic2any==='undefined')document.write('<script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"><\/script>')</script>
+  <script src="https://cdn.jsdelivr.net/npm/heic-to@1.4.2/dist/iife/heic-to.js"></script>
   <script>
     // --- Browser detection ---
     const hasFileSystemAccess = ('showDirectoryPicker' in window);
@@ -1308,19 +1307,16 @@
     }
 
     async function convertHeicToJpeg(file) {
-      if (typeof heic2any === 'undefined') {
+      if (typeof HeicTo === 'undefined') {
         throw new Error('HEIC library not loaded. Check your internet connection.');
       }
       try {
-        const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.95 });
-        // heic2any may return a single blob or an array of blobs
-        const blob = Array.isArray(result) ? result[0] : result;
+        const blob = await HeicTo({ blob: file, type: 'image/jpeg', quality: 0.92 });
         const newName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
         return new File([blob], newName, { type: 'image/jpeg' });
       } catch (err) {
         console.error('HEIC conversion error:', err);
-        // heic2any throws {code, message} objects, not standard Errors
-        const msg = err && (err.message || err.code || JSON.stringify(err));
+        const msg = err && (err.message || err.code || String(err));
         throw new Error('HEIC conversion failed: ' + msg);
       }
     }
