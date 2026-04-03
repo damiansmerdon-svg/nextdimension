@@ -971,6 +971,302 @@
       padding: 8px 0;
     }
 
+    /* Resize mode selector */
+    .mode-row {
+      grid-column: 1 / -1;
+    }
+
+    .mode-row label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .mode-buttons {
+      display: flex;
+      gap: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 10px 8px;
+      background: var(--surface2);
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-right: 1px solid var(--border);
+    }
+
+    .mode-btn:last-child {
+      border-right: none;
+    }
+
+    .mode-btn:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Advanced section */
+    .advanced-toggle-btn {
+      grid-column: 1 / -1;
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--text-dim);
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .advanced-toggle-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .advanced-section {
+      grid-column: 1 / -1;
+      display: none;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .advanced-section.open {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .dpi-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dpi-group label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .dpi-group input[type="number"] {
+      width: 80px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .dpi-group input[type="number"]:focus {
+      border-color: var(--accent);
+    }
+
+    .dpi-presets {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dpi-preset {
+      padding: 6px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .dpi-preset:hover, .dpi-preset.active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Crop button in file list */
+    .btn-crop {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 0.78rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .btn-crop:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-crop.cropped {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    /* Crop Modal */
+    .crop-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 950;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .crop-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .crop-toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .crop-toolbar-label {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      margin-right: 4px;
+    }
+
+    .ratio-btn {
+      padding: 6px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .ratio-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .ratio-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .crop-canvas-wrap {
+      position: relative;
+      display: inline-block;
+      max-width: 90vw;
+      max-height: 65vh;
+      line-height: 0;
+    }
+
+    .crop-canvas-wrap img {
+      max-width: 90vw;
+      max-height: 65vh;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .crop-selection {
+      position: absolute;
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+      cursor: move;
+      touch-action: none;
+    }
+
+    .crop-handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: white;
+      border: 2px solid var(--accent);
+      border-radius: 2px;
+    }
+
+    .crop-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+    .crop-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+    .crop-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+    .crop-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+
+    .crop-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .crop-actions button {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-crop-apply {
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border: none;
+      color: white;
+    }
+
+    .btn-crop-apply:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .btn-crop-cancel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-crop-cancel:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .crop-info {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
     @media (max-width: 600px) {
       .options-panel {
         grid-template-columns: 1fr;
@@ -1033,9 +1329,22 @@
 
     <!-- Options -->
     <div class="options-panel">
-      <div class="option-group">
-        <label>Target Width (px)</label>
+      <div class="mode-row">
+        <label>Resize Mode</label>
+        <div class="mode-buttons">
+          <button type="button" class="mode-btn active" data-mode="width">By Width</button>
+          <button type="button" class="mode-btn" data-mode="height">By Height</button>
+          <button type="button" class="mode-btn" data-mode="percentage">By %</button>
+          <button type="button" class="mode-btn" data-mode="compress">Compress Only</button>
+        </div>
+      </div>
+      <div class="option-group" id="dimensionGroup">
+        <label id="dimensionLabel">Target Width (px)</label>
         <input type="number" id="targetWidth" value="2500" min="100" max="10000" step="100">
+      </div>
+      <div class="option-group" id="percentGroup" style="display:none">
+        <label>Scale (%)</label>
+        <input type="number" id="targetPercent" value="50" min="5" max="200" step="5">
       </div>
       <div class="option-group">
         <label>Output Format</label>
@@ -1059,11 +1368,23 @@
           </label>
         </div>
       </div>
-      <div class="checkbox-row">
+      <div class="checkbox-row" id="upscaleRow">
         <label class="checkbox-label">
           <input type="checkbox" id="upscaleSmall">
           Upscale smaller images
         </label>
+      </div>
+      <button type="button" class="advanced-toggle-btn" id="advancedToggle">▸ Advanced</button>
+      <div class="advanced-section" id="advancedSection">
+        <div class="dpi-group">
+          <label>DPI</label>
+          <input type="number" id="dpiValue" value="72" min="1" max="1200" step="1">
+          <div class="dpi-presets">
+            <button type="button" class="dpi-preset active" data-dpi="72">72</button>
+            <button type="button" class="dpi-preset" data-dpi="150">150</button>
+            <button type="button" class="dpi-preset" data-dpi="300">300</button>
+          </div>
+        </div>
       </div>
       <div class="save-dest-row">
         <label>Save Folder</label>
@@ -1155,6 +1476,31 @@
     </article>
   </div>
 
+  <!-- Crop Modal -->
+  <div class="crop-overlay" id="cropOverlay">
+    <div class="crop-toolbar">
+      <span class="crop-toolbar-label">Aspect Ratio:</span>
+      <button type="button" class="ratio-btn active" data-ratio="free">Free</button>
+      <button type="button" class="ratio-btn" data-ratio="1:1">1:1</button>
+      <button type="button" class="ratio-btn" data-ratio="16:9">16:9</button>
+      <button type="button" class="ratio-btn" data-ratio="9:16">9:16</button>
+    </div>
+    <div class="crop-canvas-wrap" id="cropCanvasWrap">
+      <img id="cropImage" src="" alt="Crop preview">
+      <div class="crop-selection" id="cropSelection">
+        <div class="crop-handle nw" data-handle="nw"></div>
+        <div class="crop-handle ne" data-handle="ne"></div>
+        <div class="crop-handle sw" data-handle="sw"></div>
+        <div class="crop-handle se" data-handle="se"></div>
+      </div>
+    </div>
+    <div class="crop-info" id="cropInfo"></div>
+    <div class="crop-actions">
+      <button type="button" class="btn-crop-apply" id="cropApply">✓ Apply Crop</button>
+      <button type="button" class="btn-crop-cancel" id="cropCancel">Cancel</button>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="site-footer">
     <div class="footer-row">
@@ -1210,6 +1556,69 @@
     let selectedFolderHandle = null;
     let autoResizeEnabled = false;
     let dragCounter = 0;
+    let currentMode = 'width';
+    let cropData = {}; // per-file crop info keyed by index
+
+    // --- Resize Mode Switching ---
+    const modeButtons = document.querySelectorAll('.mode-btn');
+    const dimensionGroup = document.getElementById('dimensionGroup');
+    const dimensionLabel = document.getElementById('dimensionLabel');
+    const percentGroup = document.getElementById('percentGroup');
+    const upscaleRow = document.getElementById('upscaleRow');
+
+    function setMode(mode) {
+      currentMode = mode;
+      modeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+      dimensionGroup.style.display = (mode === 'width' || mode === 'height') ? '' : 'none';
+      percentGroup.style.display = mode === 'percentage' ? '' : 'none';
+      upscaleRow.style.display = mode === 'compress' ? 'none' : '';
+      dimensionLabel.textContent = mode === 'height' ? 'Target Height (px)' : 'Target Width (px)';
+
+      // Update suffix
+      const noSuffix = document.getElementById('noSuffix').checked;
+      if (!noSuffix) {
+        if (mode === 'width') document.getElementById('suffix').value = '_w' + document.getElementById('targetWidth').value;
+        else if (mode === 'height') document.getElementById('suffix').value = '_h' + document.getElementById('targetWidth').value;
+        else if (mode === 'percentage') document.getElementById('suffix').value = '_' + document.getElementById('targetPercent').value + 'pct';
+        else document.getElementById('suffix').value = '_compressed';
+      }
+
+      // Update button text
+      const useFolder = hasFileSystemAccess && selectedFolderHandle;
+      const verb = hasFileSystemAccess ? 'Save' : 'Download';
+      if (mode === 'compress') {
+        btnResize.textContent = `Compress & ${verb} Photos`;
+      } else {
+        btnResize.textContent = `Resize & ${verb} Photos`;
+      }
+    }
+
+    modeButtons.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+    // --- Advanced Toggle ---
+    const advancedToggle = document.getElementById('advancedToggle');
+    const advancedSection = document.getElementById('advancedSection');
+
+    advancedToggle.addEventListener('click', () => {
+      const isOpen = advancedSection.classList.toggle('open');
+      advancedToggle.textContent = isOpen ? '▾ Advanced' : '▸ Advanced';
+    });
+
+    // DPI presets
+    const dpiInput = document.getElementById('dpiValue');
+    document.querySelectorAll('.dpi-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dpiInput.value = btn.dataset.dpi;
+        document.querySelectorAll('.dpi-preset').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    dpiInput.addEventListener('input', () => {
+      document.querySelectorAll('.dpi-preset').forEach(b => {
+        b.classList.toggle('active', b.dataset.dpi === dpiInput.value);
+      });
+    });
 
     // --- Browser fallback setup ---
     if (!hasFileSystemAccess) {
@@ -1442,6 +1851,7 @@
 
     function clearFiles() {
       files = [];
+      cropData = {};
       renderFileList();
       summaryEl.classList.remove('show');
       progressSection.classList.add('hidden');
@@ -1483,6 +1893,12 @@
         info.appendChild(name);
         info.appendChild(meta);
 
+        const cropBtn = document.createElement('button');
+        cropBtn.className = cropData[i] ? 'btn-crop cropped' : 'btn-crop';
+        cropBtn.textContent = cropData[i] ? '✂ Cropped' : '✂ Crop';
+        cropBtn.title = 'Crop this image';
+        cropBtn.onclick = (e) => { e.stopPropagation(); if (!processing) openCropTool(i); };
+
         const status = document.createElement('span');
         status.className = 'file-status pending';
         status.textContent = 'Pending';
@@ -1496,6 +1912,7 @@
 
         item.appendChild(thumb);
         item.appendChild(info);
+        item.appendChild(cropBtn);
         item.appendChild(status);
         item.appendChild(removeBtn);
         fileList.appendChild(item);
@@ -1515,11 +1932,20 @@
       document.getElementById('suffix').disabled = this.checked;
     });
 
-    // Auto-update suffix when width changes (live)
+    // Auto-update suffix when width/height changes (live)
     document.getElementById('targetWidth').addEventListener('input', function() {
       const noSuffix = document.getElementById('noSuffix').checked;
       if (!noSuffix) {
-        document.getElementById('suffix').value = '_w' + this.value;
+        const prefix = currentMode === 'height' ? '_h' : '_w';
+        document.getElementById('suffix').value = prefix + this.value;
+      }
+    });
+
+    // Auto-update suffix when percentage changes
+    document.getElementById('targetPercent').addEventListener('input', function() {
+      const noSuffix = document.getElementById('noSuffix').checked;
+      if (!noSuffix) {
+        document.getElementById('suffix').value = '_' + this.value + 'pct';
       }
     });
 
@@ -1571,12 +1997,15 @@
       progressSection.classList.remove('hidden');
       progressBar.style.width = '0%';
 
-      const targetWidth = parseInt(document.getElementById('targetWidth').value) || 2500;
+      const mode = currentMode;
+      const targetDim = parseInt(document.getElementById('targetWidth').value) || 2500;
+      const targetPct = parseInt(document.getElementById('targetPercent').value) || 50;
       const outputFormat = document.getElementById('outputFormat').value;
       const quality = (parseInt(document.getElementById('quality').value) || 92) / 100;
       const noSuffix = document.getElementById('noSuffix').checked;
       const suffix = noSuffix ? '' : (document.getElementById('suffix').value || '_w2500');
       const upscaleSmall = document.getElementById('upscaleSmall').checked;
+      const dpi = parseInt(dpiInput.value) || 72;
 
       let processed = 0, skipped = 0, failed = 0;
 
@@ -1585,7 +2014,8 @@
         const statusEl = document.getElementById(`status-${i}`);
         if (statusEl) {
           statusEl.className = 'file-status processing';
-          statusEl.textContent = isHeicFile(file) ? 'Converting HEIC...' : 'Resizing...';
+          const modeVerb = mode === 'compress' ? 'Compressing...' : 'Resizing...';
+          statusEl.textContent = isHeicFile(file) ? 'Converting HEIC...' : modeVerb;
         }
 
         try {
@@ -1607,7 +2037,7 @@
               continue;
             }
           }
-          const result = await resizeImage(file, targetWidth, outputFormat, quality, suffix, upscaleSmall);
+          const result = await resizeImage(file, mode, targetDim, targetPct, outputFormat, quality, suffix, upscaleSmall, dpi);
           if (result.skipped) {
             skipped++;
             if (statusEl) {
@@ -1664,7 +2094,8 @@
       // Summary
       let statsHTML = '';
       const verb = useFolder ? 'saved' : 'downloaded';
-      if (processed > 0) statsHTML += `✅ Resized & ${verb}: ${processed} file(s)<br>`;
+      const action = mode === 'compress' ? 'Compressed' : 'Resized';
+      if (processed > 0) statsHTML += `✅ ${action} & ${verb}: ${processed} file(s)<br>`;
       if (skipped > 0) statsHTML += `⏭ Skipped (too small): ${skipped} file(s)<br>`;
       if (failed > 0) statsHTML += `❌ Failed: ${failed} file(s)<br>`;
 
@@ -1691,29 +2122,52 @@
       }
     }
 
-    function resizeImage(file, targetWidth, outputFormat, quality, suffix, upscaleSmall) {
+    function resizeImage(file, mode, targetDim, targetPct, outputFormat, quality, suffix, upscaleSmall, dpi) {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
           const srcW = img.naturalWidth;
           const srcH = img.naturalHeight;
+          let newW, newH;
 
-          if (srcW < targetWidth && !upscaleSmall) {
-            URL.revokeObjectURL(img.src);
-            resolve({ skipped: true, originalWidth: srcW });
-            return;
+          if (mode === 'compress') {
+            newW = srcW;
+            newH = srcH;
+          } else if (mode === 'percentage') {
+            const scale = targetPct / 100;
+            newW = Math.max(1, Math.round(srcW * scale));
+            newH = Math.max(1, Math.round(srcH * scale));
+            if (scale >= 1 && !upscaleSmall) {
+              URL.revokeObjectURL(img.src);
+              resolve({ skipped: true, originalWidth: srcW });
+              return;
+            }
+          } else if (mode === 'height') {
+            if (srcH < targetDim && !upscaleSmall) {
+              URL.revokeObjectURL(img.src);
+              resolve({ skipped: true, originalWidth: srcW });
+              return;
+            }
+            const scale = targetDim / srcH;
+            newH = targetDim;
+            newW = Math.max(1, Math.round(srcW * scale));
+          } else {
+            // width (default)
+            if (srcW < targetDim && !upscaleSmall) {
+              URL.revokeObjectURL(img.src);
+              resolve({ skipped: true, originalWidth: srcW });
+              return;
+            }
+            const scale = targetDim / srcW;
+            newW = targetDim;
+            newH = Math.max(1, Math.round(srcH * scale));
           }
-
-          const scale = targetWidth / srcW;
-          const newW = targetWidth;
-          const newH = Math.max(1, Math.round(srcH * scale));
 
           const canvas = document.createElement('canvas');
           canvas.width = newW;
           canvas.height = newH;
           const ctx = canvas.getContext('2d');
 
-          // Use high-quality resampling
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, newW, newH);
@@ -1725,7 +2179,7 @@
           if (outputFormat === 'original') {
             mime = file.type || 'image/jpeg';
             ext = file.name.split('.').pop().toLowerCase();
-            if (ext === 'tif' || ext === 'tiff' || ext === 'bmp' || ext === 'heic' || ext === 'heif') {
+            if (['tif','tiff','bmp','heic','heif'].includes(ext)) {
               mime = 'image/jpeg';
               ext = 'jpg';
             }
@@ -1739,12 +2193,20 @@
 
           const baseName = file.name.replace(/\.[^.]+$/, '');
           const filename = `${baseName}${suffix}.${ext}`;
-
           const qualityArg = (mime === 'image/jpeg' || mime === 'image/webp') ? quality : undefined;
 
           canvas.toBlob(blob => {
             if (!blob) return reject(new Error('Canvas toBlob failed'));
-            resolve({ blob, filename, newWidth: newW, newHeight: newH, skipped: false });
+            // Inject DPI metadata if not default 72
+            if (dpi && dpi !== 72) {
+              injectDpi(blob, mime, dpi).then(dpiBlob => {
+                resolve({ blob: dpiBlob, filename, newWidth: newW, newHeight: newH, skipped: false });
+              }).catch(() => {
+                resolve({ blob, filename, newWidth: newW, newHeight: newH, skipped: false });
+              });
+            } else {
+              resolve({ blob, filename, newWidth: newW, newHeight: newH, skipped: false });
+            }
           }, mime, qualityArg);
         };
 
@@ -1756,6 +2218,341 @@
         img.src = URL.createObjectURL(file);
       });
     }
+
+    // --- DPI Injection ---
+    async function injectDpi(blob, mime, dpi) {
+      const buf = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+
+      if (mime === 'image/jpeg') {
+        return injectJpegDpi(bytes, dpi);
+      } else if (mime === 'image/png') {
+        return injectPngDpi(bytes, dpi);
+      }
+      return blob;
+    }
+
+    function injectJpegDpi(bytes, dpi) {
+      // Find JFIF APP0 marker (FF E0) and patch density
+      if (bytes[0] !== 0xFF || bytes[1] !== 0xD8) return new Blob([bytes], { type: 'image/jpeg' });
+
+      let offset = 2;
+      while (offset < bytes.length - 4) {
+        if (bytes[offset] === 0xFF && bytes[offset + 1] === 0xE0) {
+          // JFIF header found — set units to DPI (1) and set X/Y density
+          const segStart = offset + 4; // skip marker + length
+          if (bytes[segStart] === 0x4A && bytes[segStart + 1] === 0x46) { // 'JF'
+            bytes[segStart + 7] = 1; // units = DPI
+            bytes[segStart + 8] = (dpi >> 8) & 0xFF;
+            bytes[segStart + 9] = dpi & 0xFF;
+            bytes[segStart + 10] = (dpi >> 8) & 0xFF;
+            bytes[segStart + 11] = dpi & 0xFF;
+          }
+          break;
+        }
+        const len = (bytes[offset + 2] << 8) | bytes[offset + 3];
+        offset += 2 + len;
+      }
+      return new Blob([bytes], { type: 'image/jpeg' });
+    }
+
+    function injectPngDpi(bytes, dpi) {
+      // Insert pHYs chunk before first IDAT
+      const ppm = Math.round(dpi / 0.0254); // pixels per metre
+      const phys = new Uint8Array(25);
+      const dv = new DataView(phys.buffer);
+      dv.setUint32(0, 9); // chunk data length
+      phys[4] = 0x70; phys[5] = 0x48; phys[6] = 0x59; phys[7] = 0x73; // 'pHYs'
+      dv.setUint32(8, ppm);
+      dv.setUint32(12, ppm);
+      phys[16] = 1; // unit = metre
+      // CRC over type + data
+      const crc = crc32(phys.subarray(4, 17));
+      dv.setUint32(17, crc);
+
+      // Find first IDAT
+      let pos = 8; // skip PNG signature
+      while (pos < bytes.length - 8) {
+        const chunkLen = (bytes[pos] << 24) | (bytes[pos+1] << 16) | (bytes[pos+2] << 8) | bytes[pos+3];
+        const type = String.fromCharCode(bytes[pos+4], bytes[pos+5], bytes[pos+6], bytes[pos+7]);
+        if (type === 'IDAT') {
+          // Insert pHYs before this chunk
+          const before = bytes.subarray(0, pos);
+          const after = bytes.subarray(pos);
+          return new Blob([before, phys.subarray(0, 21), after], { type: 'image/png' });
+        }
+        if (type === 'pHYs') {
+          // Already has pHYs — overwrite it
+          const ppmBytes = new DataView(bytes.buffer, pos + 8);
+          ppmBytes.setUint32(0, ppm);
+          ppmBytes.setUint32(4, ppm);
+          bytes[pos + 16] = 1;
+          const newCrc = crc32(bytes.subarray(pos + 4, pos + 4 + 4 + chunkLen));
+          const crcView = new DataView(bytes.buffer, pos + 4 + 4 + chunkLen);
+          crcView.setUint32(0, newCrc);
+          return new Blob([bytes], { type: 'image/png' });
+        }
+        pos += 12 + chunkLen;
+      }
+      return new Blob([bytes], { type: 'image/png' });
+    }
+
+    // Simple CRC32 for PNG chunks
+    const crc32Table = (() => {
+      const t = new Uint32Array(256);
+      for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        t[i] = c;
+      }
+      return t;
+    })();
+
+    function crc32(data) {
+      let crc = 0xFFFFFFFF;
+      for (let i = 0; i < data.length; i++) crc = crc32Table[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+      return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    // --- Crop Tool ---
+    const cropOverlay = document.getElementById('cropOverlay');
+    const cropImage = document.getElementById('cropImage');
+    const cropSelection = document.getElementById('cropSelection');
+    const cropInfo = document.getElementById('cropInfo');
+    const cropCanvasWrap = document.getElementById('cropCanvasWrap');
+    let cropFileIndex = -1;
+    let cropRatio = null; // null = free
+    let cropDrag = null;
+    let cropRect = { x: 0, y: 0, w: 100, h: 100 };
+    let cropImgW = 0, cropImgH = 0;
+    let cropDisplayW = 0, cropDisplayH = 0;
+
+    function openCropTool(index) {
+      cropFileIndex = index;
+      const file = files[index];
+
+      // For HEIC, convert first
+      if (isHeicFile(file)) {
+        cropInfo.textContent = 'Converting HEIC...';
+        cropOverlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        convertHeicToJpeg(file).then(jpgFile => {
+          files[index] = jpgFile;
+          loadCropImage(jpgFile);
+        }).catch(err => {
+          closeCropTool();
+          showToast('HEIC conversion failed: ' + err.message, 'error');
+        });
+        return;
+      }
+
+      cropOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      loadCropImage(file);
+    }
+
+    function loadCropImage(file) {
+      const url = URL.createObjectURL(file);
+      cropImage.onload = () => {
+        URL.revokeObjectURL(url);
+        cropImgW = cropImage.naturalWidth;
+        cropImgH = cropImage.naturalHeight;
+        cropDisplayW = cropImage.clientWidth;
+        cropDisplayH = cropImage.clientHeight;
+
+        // Default: select entire image
+        cropRect = { x: 0, y: 0, w: cropDisplayW, h: cropDisplayH };
+        cropRatio = null;
+        document.querySelectorAll('.ratio-btn').forEach(b => b.classList.toggle('active', b.dataset.ratio === 'free'));
+        updateCropSelection();
+      };
+      cropImage.src = url;
+    }
+
+    function closeCropTool() {
+      cropOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+      cropImage.src = '';
+      cropFileIndex = -1;
+    }
+
+    document.getElementById('cropCancel').addEventListener('click', closeCropTool);
+
+    document.getElementById('cropApply').addEventListener('click', () => {
+      if (cropFileIndex < 0) return;
+      // Convert display coords to actual image coords
+      const scaleX = cropImgW / cropDisplayW;
+      const scaleY = cropImgH / cropDisplayH;
+      const sx = Math.round(cropRect.x * scaleX);
+      const sy = Math.round(cropRect.y * scaleY);
+      const sw = Math.round(cropRect.w * scaleX);
+      const sh = Math.round(cropRect.h * scaleY);
+
+      if (sw < 1 || sh < 1) { closeCropTool(); return; }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = sw;
+      canvas.height = sh;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(cropImage, sx, sy, sw, sh, 0, 0, sw, sh);
+
+      const file = files[cropFileIndex];
+      const mime = file.type || 'image/jpeg';
+      canvas.toBlob(blob => {
+        if (!blob) { closeCropTool(); return; }
+        const croppedFile = new File([blob], file.name, { type: mime });
+        files[cropFileIndex] = croppedFile;
+        cropData[cropFileIndex] = true;
+        renderFileList();
+        closeCropTool();
+        showToast(`Cropped: ${sw}×${sh}px`, 'success');
+      }, mime, 0.95);
+    });
+
+    // Ratio buttons
+    document.querySelectorAll('.ratio-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const r = btn.dataset.ratio;
+        if (r === 'free') {
+          cropRatio = null;
+        } else {
+          const [rw, rh] = r.split(':').map(Number);
+          cropRatio = rw / rh;
+        }
+        // Re-constrain current selection
+        if (cropRatio) {
+          const centerX = cropRect.x + cropRect.w / 2;
+          const centerY = cropRect.y + cropRect.h / 2;
+          let newW = cropRect.w;
+          let newH = newW / cropRatio;
+          if (newH > cropDisplayH) {
+            newH = cropDisplayH;
+            newW = newH * cropRatio;
+          }
+          if (newW > cropDisplayW) {
+            newW = cropDisplayW;
+            newH = newW / cropRatio;
+          }
+          let newX = centerX - newW / 2;
+          let newY = centerY - newH / 2;
+          if (newX < 0) newX = 0;
+          if (newY < 0) newY = 0;
+          if (newX + newW > cropDisplayW) newX = cropDisplayW - newW;
+          if (newY + newH > cropDisplayH) newY = cropDisplayH - newH;
+          cropRect = { x: newX, y: newY, w: newW, h: newH };
+        }
+        updateCropSelection();
+      });
+    });
+
+    function updateCropSelection() {
+      cropSelection.style.left = cropRect.x + 'px';
+      cropSelection.style.top = cropRect.y + 'px';
+      cropSelection.style.width = cropRect.w + 'px';
+      cropSelection.style.height = cropRect.h + 'px';
+
+      const scaleX = cropImgW / cropDisplayW;
+      const scaleY = cropImgH / cropDisplayH;
+      const realW = Math.round(cropRect.w * scaleX);
+      const realH = Math.round(cropRect.h * scaleY);
+      cropInfo.textContent = `${realW} × ${realH} px`;
+    }
+
+    // --- Crop Drag & Resize ---
+    function getCropPointer(e) {
+      const rect = cropCanvasWrap.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+    }
+
+    cropSelection.addEventListener('mousedown', startCropDrag);
+    cropSelection.addEventListener('touchstart', startCropDrag, { passive: false });
+
+    function startCropDrag(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const p = getCropPointer(e);
+      const handle = e.target.dataset.handle;
+
+      if (handle) {
+        cropDrag = { type: 'resize', handle, startX: p.x, startY: p.y, startRect: { ...cropRect } };
+      } else {
+        cropDrag = { type: 'move', startX: p.x, startY: p.y, startRect: { ...cropRect } };
+      }
+
+      document.addEventListener('mousemove', onCropMove);
+      document.addEventListener('mouseup', endCropDrag);
+      document.addEventListener('touchmove', onCropMove, { passive: false });
+      document.addEventListener('touchend', endCropDrag);
+    }
+
+    function onCropMove(e) {
+      if (!cropDrag) return;
+      e.preventDefault();
+      const p = getCropPointer(e);
+      const dx = p.x - cropDrag.startX;
+      const dy = p.y - cropDrag.startY;
+      const sr = cropDrag.startRect;
+
+      if (cropDrag.type === 'move') {
+        let nx = sr.x + dx;
+        let ny = sr.y + dy;
+        nx = Math.max(0, Math.min(nx, cropDisplayW - sr.w));
+        ny = Math.max(0, Math.min(ny, cropDisplayH - sr.h));
+        cropRect.x = nx;
+        cropRect.y = ny;
+      } else {
+        // Resize from handle
+        const h = cropDrag.handle;
+        let nx = sr.x, ny = sr.y, nw = sr.w, nh = sr.h;
+
+        if (h === 'se') { nw = sr.w + dx; nh = sr.h + dy; }
+        else if (h === 'sw') { nx = sr.x + dx; nw = sr.w - dx; nh = sr.h + dy; }
+        else if (h === 'ne') { nw = sr.w + dx; ny = sr.y + dy; nh = sr.h - dy; }
+        else if (h === 'nw') { nx = sr.x + dx; nw = sr.w - dx; ny = sr.y + dy; nh = sr.h - dy; }
+
+        // Enforce minimum
+        if (nw < 20) { nw = 20; if (h === 'sw' || h === 'nw') nx = sr.x + sr.w - 20; }
+        if (nh < 20) { nh = 20; if (h === 'ne' || h === 'nw') ny = sr.y + sr.h - 20; }
+
+        // Enforce ratio
+        if (cropRatio) {
+          if (h === 'se' || h === 'ne') {
+            nh = nw / cropRatio;
+            if (h === 'ne') ny = sr.y + sr.h - nh;
+          } else {
+            nw = nh * cropRatio;
+            if (h === 'nw') nx = sr.x + sr.w - nw;
+            if (h === 'sw') nx = sr.x + sr.w - nw;
+          }
+        }
+
+        // Clamp to bounds
+        if (nx < 0) { nw += nx; nx = 0; }
+        if (ny < 0) { nh += ny; ny = 0; }
+        if (nx + nw > cropDisplayW) nw = cropDisplayW - nx;
+        if (ny + nh > cropDisplayH) nh = cropDisplayH - ny;
+
+        cropRect = { x: nx, y: ny, w: nw, h: nh };
+      }
+
+      updateCropSelection();
+    }
+
+    function endCropDrag() {
+      cropDrag = null;
+      document.removeEventListener('mousemove', onCropMove);
+      document.removeEventListener('mouseup', endCropDrag);
+      document.removeEventListener('touchmove', onCropMove);
+      document.removeEventListener('touchend', endCropDrag);
+    }
+
+    // Close crop on Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && cropOverlay.classList.contains('open')) closeCropTool();
+    });
 
     // Init
     updateAutoState();
