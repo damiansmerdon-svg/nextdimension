@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NextDimension – Free Batch Photo Resizer for After Effects, Motion Design & Video Editing</title>
+  <meta name="description" content="Started importing huge photos into After Effects and watched your RAM get chewed up? NextDimension lets you batch resize photos fast by custom width while keeping natural aspect ratio. Perfect for After Effects, motion design, and video editing workflows.">
+  <meta name="keywords" content="free batch photo resizer, batch image resizer, resize photos online, resize images by width, resize photos for After Effects, image prep for motion graphics, photo resizer for video editors, resize images without cropping, keep aspect ratio image resize">
+  <meta property="og:title" content="NextDimension – Free Batch Photo Resizer">
+  <meta property="og:description" content="Batch resize oversized photos before they chew through RAM in After Effects. Keep natural proportions, reduce dimensions fast, and prep stills in seconds.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="NextDimension – Free Batch Photo Resizer">
+  <meta name="twitter:description" content="Batch resize oversized photos before they chew through RAM in After Effects. Keep natural proportions, reduce dimensions fast, and prep stills in seconds.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='18' width='100' height='100' fill='%236c5ce7'/><text x='50' y='72' font-size='58' text-anchor='middle' fill='white'>N</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #242836;
+      --border: #2e3344;
+      --accent: #6c5ce7;
+      --accent-hover: #7c6df7;
+      --accent-glow: rgba(108, 92, 231, 0.25);
+      --text: #e8e8ee;
+      --text-dim: #8b8da0;
+      --success: #00b894;
+      --warning: #fdcb6e;
+      --danger: #e17055;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+      padding: 32px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    header h1 span {
+      font-weight: 400;
+      font-size: 1.2rem;
+    }
+
+    header p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+    }
+
+    /* Auto-mode toggle button */
+    .auto-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      user-select: none;
+    }
+
+    .auto-toggle.off {
+      background: var(--surface2);
+      color: var(--text-dim);
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+
+    .auto-toggle.off:hover {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    .auto-toggle.on {
+      background: rgba(0, 184, 148, 0.15);
+      color: var(--success);
+      box-shadow: inset 0 0 0 1px rgba(0, 184, 148, 0.3);
+    }
+
+    .auto-toggle.on:hover {
+      background: rgba(0, 184, 148, 0.22);
+    }
+
+    .auto-toggle .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: var(--surface);
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(108, 92, 231, 0.06);
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+
+    .drop-zone.auto-ready {
+      border-color: var(--success);
+      border-style: solid;
+    }
+
+    .drop-zone.auto-ready:hover, .drop-zone.auto-ready.dragover {
+      border-color: var(--success);
+      background: rgba(0, 184, 148, 0.06);
+      box-shadow: 0 0 24px rgba(0, 184, 148, 0.25);
+    }
+
+    .drop-zone-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+
+    .drop-zone h3 {
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+
+    .drop-zone p {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    .drop-zone input {
+      display: none;
+    }
+
+    /* Options Panel */
+    .options-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .option-group label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .option-group input[type="number"],
+    .option-group select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .option-group input[type="number"]:focus,
+    .option-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .checkbox-row {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface2);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .checkbox-label input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .checkbox-label input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* File List */
+    .file-list-section {
+      margin-top: 20px;
+    }
+
+    .file-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .file-list-header h3 {
+      font-size: 0.95rem;
+    }
+
+    .file-count {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      background: var(--surface2);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .btn-clear {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .btn-clear:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .file-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .file-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .file-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .file-list::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      transition: background 0.15s;
+    }
+
+    .file-item:last-child {
+      border-bottom: none;
+    }
+
+    .file-item:hover {
+      background: var(--surface2);
+    }
+
+    .file-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: var(--surface2);
+      flex-shrink: 0;
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-meta {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .file-status {
+      font-size: 0.78rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .file-status.pending {
+      background: var(--surface2);
+      color: var(--text-dim);
+    }
+
+    .file-status.processing {
+      background: rgba(108, 92, 231, 0.15);
+      color: var(--accent);
+    }
+
+    .file-status.done {
+      background: rgba(0, 184, 148, 0.15);
+      color: var(--success);
+    }
+
+    .file-status.skipped {
+      background: rgba(253, 203, 110, 0.15);
+      color: var(--warning);
+    }
+
+    .file-status.error {
+      background: rgba(225, 112, 85, 0.15);
+      color: var(--danger);
+    }
+
+    .file-remove {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .file-remove:hover {
+      color: var(--danger);
+    }
+
+    /* Progress */
+    .progress-section {
+      margin-top: 20px;
+    }
+
+    .progress-bar-container {
+      background: var(--surface2);
+      border-radius: 8px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #a29bfe);
+      border-radius: 8px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    /* Action Button */
+    .btn-resize {
+      width: 100%;
+      margin-top: 20px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-resize:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+
+    .btn-resize:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-resize:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Summary */
+    .summary {
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .summary.show {
+      display: block;
+    }
+
+    .summary-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .summary-stats {
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Save destination */
+    .save-dest-row {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .save-dest-row > label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .save-options {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-folder {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .btn-folder:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .folder-path {
+      font-size: 0.82rem;
+      color: var(--success);
+      max-width: 300px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Suffix row */
+    .suffix-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .suffix-row input[type="text"] {
+      flex: 1;
+    }
+
+    .option-group input[type="text"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .option-group input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    .option-group input[type="text"]:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: white;
+      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+      pointer-events: auto;
+      max-width: 340px;
+    }
+
+    .toast.success {
+      background: linear-gradient(135deg, #00b894, #00cec9);
+    }
+
+    .toast.error {
+      background: linear-gradient(135deg, #e17055, #d63031);
+    }
+
+    .toast.info {
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    }
+
+    /* Privacy badge */
+    .privacy-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      letter-spacing: 0.2px;
+    }
+
+    .privacy-badge svg {
+      flex-shrink: 0;
+    }
+
+    /* Browser notice */
+    .browser-notice {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(253, 203, 110, 0.08);
+      border: 1px solid rgba(253, 203, 110, 0.2);
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+      color: var(--warning);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .browser-notice a {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    /* Header help link + icon */
+    .header-links {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .help-link {
+      font-size: 0.82rem;
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: none;
+      border-bottom: 1px dashed var(--accent);
+      transition: opacity 0.2s;
+    }
+
+    .help-link:hover {
+      opacity: 0.8;
+    }
+
+    .help-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .help-icon:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 640px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 32px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .modal h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-right: 40px;
+      line-height: 1.4;
+    }
+
+    .modal p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .modal h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .modal ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 16px;
+    }
+
+    .modal ul li {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      padding: 4px 0 4px 20px;
+      position: relative;
+      line-height: 1.6;
+    }
+
+    .modal ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    .modal .note {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    .modal .btn-download-app {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+    }
+
+    .modal .btn-download-app:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    /* Footer */
+    .site-footer {
+      width: 100%;
+      max-width: 860px;
+      padding: 0 24px 40px;
+      margin-top: 8px;
+    }
+
+    .footer-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .footer-section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .footer-section p {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .footer-section .btn-download-app {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 12px;
+    }
+
+    .footer-section .btn-download-app:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .footer-section .steps {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .footer-section .steps span {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+
+    .footer-section .steps span strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .footer-section .note {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    .footer-donate {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .footer-donate p {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .btn-donate {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-donate:hover {
+      border-color: var(--warning);
+      color: var(--warning);
+    }
+
+    .footer-copy {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      opacity: 0.5;
+      padding: 8px 0;
+    }
+
+    @media (max-width: 600px) {
+      .options-panel {
+        grid-template-columns: 1fr;
+      }
+      .checkbox-row {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .save-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .footer-section .steps {
+        flex-direction: column;
+        gap: 6px;
+      }
+      .modal {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>NextDimension <span>Quick Photo Resizer</span></h1>
+      <p>Batch resize oversized photos before they chew through RAM in After Effects</p>
+      <div class="header-links">
+        <a class="help-link" id="openHelp">Why NextDimension?</a>
+        <button class="help-icon" id="openHelpIcon" type="button" title="Help">?</button>
+      </div>
+      <button class="auto-toggle off" id="autoToggle" type="button">
+        <span id="autoToggleIcon">⚡</span> <span id="autoToggleText">Auto-Resize: OFF</span>
+      </button>
+    </header>
+
+    <!-- Drop Zone -->
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-zone-icon">📸</div>
+      <h3 id="dropZoneTitle">Drop photos here or click to browse</h3>
+      <p>Supports JPG, PNG, WebP, BMP, TIFF</p>
+      <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff">
+    </div>
+
+    <!-- Privacy badge -->
+    <div class="privacy-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Your photos never leave your device &mdash; 100% client-side
+    </div>
+
+    <!-- Browser notice (shown only for non-Chromium) -->
+    <div class="browser-notice hidden" id="browserNotice">
+      Folder saving and auto-resize work best in <strong>Chrome</strong> or <strong>Edge</strong>. You can still resize and download your photos in this browser, or <a href="#" onclick="downloadApp(); return false;">download the app</a> to use locally.
+    </div>
+
+    <!-- Options -->
+    <div class="options-panel">
+      <div class="option-group">
+        <label>Target Width (px)</label>
+        <input type="number" id="targetWidth" value="2500" min="100" max="10000" step="100">
+      </div>
+      <div class="option-group">
+        <label>Output Format</label>
+        <select id="outputFormat">
+          <option value="original">Keep Original</option>
+          <option value="image/jpeg">JPG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+      </div>
+      <div class="option-group">
+        <label>JPG / WebP Quality</label>
+        <input type="number" id="quality" value="92" min="10" max="100">
+      </div>
+      <div class="option-group">
+        <label>Filename Suffix</label>
+        <div class="suffix-row">
+          <input type="text" id="suffix" value="_w2500">
+          <label class="checkbox-label" style="white-space:nowrap;font-size:0.82rem">
+            <input type="checkbox" id="noSuffix"> None
+          </label>
+        </div>
+      </div>
+      <div class="checkbox-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="upscaleSmall">
+          Upscale smaller images
+        </label>
+      </div>
+      <div class="save-dest-row">
+        <label>Save Folder</label>
+        <div class="save-options">
+          <button type="button" class="btn-folder" id="btnChooseFolder">📁 Choose folder…</button>
+          <span class="folder-path" id="folderPath" style="display:none"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- File List -->
+    <div class="file-list-section hidden" id="fileListSection">
+      <div class="file-list-header">
+        <h3>Photos <span class="file-count" id="fileCount">0</span></h3>
+        <button class="btn-clear" id="btnClear">Clear All</button>
+      </div>
+      <div class="file-list" id="fileList"></div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-section hidden" id="progressSection">
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-text" id="progressText">Processing...</div>
+    </div>
+
+    <!-- Resize Button -->
+    <button class="btn-resize" id="btnResize" disabled>Resize & Save Photos</button>
+
+    <!-- Summary -->
+    <div class="summary" id="summary">
+      <div class="summary-title" id="summaryTitle">Done!</div>
+      <div class="summary-stats" id="summaryStats"></div>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal-overlay" id="helpModal">
+    <article class="modal">
+      <button class="modal-close" id="closeHelp" type="button">&times;</button>
+      <h2>Resize Photos Fast Before They Slow Down After Effects</h2>
+      <p>Ever started importing photos into After Effects and then realised the images were massive, your RAM was getting smashed, and the whole job was slowing down? NextDimension was made for exactly that moment. Resize photos fast by width, keep their natural proportions, and prep a whole batch in seconds.</p>
+      <p>If your photos are far bigger than they need to be, NextDimension helps you fix that in seconds. Batch resize images by width, keep them natural, and get on with the creative work without opening heavier software.</p>
+
+      <h3>Why resize before importing into After Effects?</h3>
+      <p>After Effects loads every pixel of every image into RAM. A 6000px wide photo from a camera uses far more memory than a 2500px version of the same image. If you are working with dozens of stills in a composition, those oversized files stack up fast and After Effects slows to a crawl. Resizing before import keeps your project responsive and your RAM under control.</p>
+
+      <h3>Which browsers work best?</h3>
+      <p>NextDimension works in any modern browser for basic resizing. However, the folder-save and auto-resize features use the File System Access API, which is only available in Chromium-based browsers like Chrome, Edge, and Opera. Firefox and Safari will fall back to individual file downloads.</p>
+
+      <h3>Use NextDimension offline</h3>
+      <button class="btn-download-app" onclick="downloadApp()" type="button">⬇ Download This App</button>
+      <p>Save the file to your PC, open it in Chrome or Edge, and bookmark it for quick access.</p>
+      <p class="note">Best supported in Chromium-based browsers.</p>
+    </article>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <section class="footer-section">
+      <h3>Download This App</h3>
+      <p>Save NextDimension as a single HTML file and use it offline anytime.</p>
+      <button class="btn-download-app" onclick="downloadApp()" type="button">⬇ Download This App</button>
+      <div class="steps">
+        <span><strong>1.</strong> Save the file to your PC</span>
+        <span><strong>2.</strong> Open it in Chrome or Edge</span>
+        <span><strong>3.</strong> Bookmark it for quick access</span>
+      </div>
+      <p class="note">Best supported in Chromium-based browsers.</p>
+    </section>
+
+    <section class="footer-section footer-donate">
+      <p>If NextDimension saved your project from giant photo chaos, you can shout me a coffee.</p>
+      <a class="btn-donate" href="https://example.com/donate" target="_blank" rel="noopener">☕ Buy Me a Coffee</a>
+    </section>
+
+    <div class="footer-copy">&copy; 2026 NextDimension. All processing happens in your browser.</div>
+  </footer>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // --- Browser detection ---
+    const hasFileSystemAccess = ('showDirectoryPicker' in window);
+    const isChromium = !!window.chrome;
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileListSection = document.getElementById('fileListSection');
+    const fileList = document.getElementById('fileList');
+    const fileCount = document.getElementById('fileCount');
+    const btnClear = document.getElementById('btnClear');
+    const btnResize = document.getElementById('btnResize');
+    const progressSection = document.getElementById('progressSection');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const summaryEl = document.getElementById('summary');
+    const summaryTitle = document.getElementById('summaryTitle');
+    const summaryStats = document.getElementById('summaryStats');
+    const autoToggle = document.getElementById('autoToggle');
+    const autoToggleText = document.getElementById('autoToggleText');
+    const dropZoneTitle = document.getElementById('dropZoneTitle');
+
+    let files = [];
+    let processing = false;
+    let selectedFolderHandle = null;
+    let autoResizeEnabled = false;
+    let dragCounter = 0;
+
+    // --- Browser fallback setup ---
+    if (!hasFileSystemAccess) {
+      document.getElementById('browserNotice').classList.remove('hidden');
+      // Hide folder-only features
+      document.querySelector('.save-dest-row').style.display = 'none';
+      autoToggle.style.display = 'none';
+      btnResize.textContent = 'Resize & Download Photos';
+    }
+
+    // --- Modal logic ---
+    const helpModal = document.getElementById('helpModal');
+
+    function openModal() {
+      helpModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      helpModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('openHelp').addEventListener('click', openModal);
+    document.getElementById('openHelpIcon').addEventListener('click', openModal);
+    document.getElementById('closeHelp').addEventListener('click', closeModal);
+
+    helpModal.addEventListener('click', e => {
+      if (e.target === helpModal) closeModal();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && helpModal.classList.contains('open')) closeModal();
+    });
+
+    // Auto-show on first visit
+    if (!localStorage.getItem('nd_visited')) {
+      localStorage.setItem('nd_visited', '1');
+      setTimeout(openModal, 800);
+    }
+
+    // --- Download app (self-download) ---
+    function downloadApp() {
+      const html = document.documentElement.outerHTML;
+      const blob = new Blob(['<!DOCTYPE html>\n' + html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'NextDimension.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('App downloaded! Open it in Chrome or Edge.', 'success');
+    }
+
+    // Supported MIME types
+    const SUPPORTED = new Set([
+      'image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff'
+    ]);
+
+    function isSupportedFile(file) {
+      if (SUPPORTED.has(file.type)) return true;
+      const ext = file.name.split('.').pop().toLowerCase();
+      return ['jpg','jpeg','png','webp','bmp','tif','tiff'].includes(ext);
+    }
+
+    // --- Toast Notifications ---
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // --- Auto-mode toggle ---
+    function isAutoMode() {
+      return autoResizeEnabled && selectedFolderHandle !== null;
+    }
+
+    function updateAutoState() {
+      if (autoResizeEnabled) {
+        autoToggle.className = 'auto-toggle on';
+        document.getElementById('autoToggleIcon').innerHTML = '<span class="pulse"></span>';
+        autoToggleText.textContent = 'Auto-Resize: ON';
+        if (selectedFolderHandle) {
+          dropZone.classList.add('auto-ready');
+          dropZoneTitle.textContent = 'Drop photos to auto-resize & save';
+        } else {
+          dropZone.classList.remove('auto-ready');
+          dropZoneTitle.textContent = 'Choose a folder, then drop photos';
+        }
+      } else {
+        autoToggle.className = 'auto-toggle off';
+        document.getElementById('autoToggleIcon').innerHTML = '⚡';
+        autoToggleText.textContent = 'Auto-Resize: OFF';
+        dropZone.classList.remove('auto-ready');
+        dropZoneTitle.textContent = 'Drop photos here or click to browse';
+      }
+    }
+
+    autoToggle.addEventListener('click', () => {
+      autoResizeEnabled = !autoResizeEnabled;
+      updateAutoState();
+      if (autoResizeEnabled && !selectedFolderHandle) {
+        showToast('Now choose a save folder to complete setup', 'info');
+      } else if (autoResizeEnabled && selectedFolderHandle) {
+        showToast('Auto-resize ON — drop files to resize & save instantly', 'success');
+      } else {
+        showToast('Auto-resize OFF — use the button to resize manually', 'info');
+      }
+    });
+
+    // --- Drop Zone ---
+    dropZone.addEventListener('click', () => { if (!processing) fileInput.click(); });
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+    });
+
+    dropZone.addEventListener('dragenter', e => {
+      e.preventDefault();
+      dragCounter++;
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', e => {
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        dropZone.classList.remove('dragover');
+      }
+    });
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dragCounter = 0;
+      dropZone.classList.remove('dragover');
+      if (processing) return;
+      const items = [...e.dataTransfer.files].filter(isSupportedFile);
+      if (items.length === 0) return;
+
+      if (isAutoMode()) {
+        // Auto-resize mode: add files, show them, then auto-process
+        addFiles(items);
+        startResize();
+      } else {
+        addFiles(items);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (processing) return;
+      const items = [...fileInput.files].filter(isSupportedFile);
+      if (items.length === 0) { fileInput.value = ''; return; }
+
+      if (isAutoMode()) {
+        addFiles(items);
+        fileInput.value = '';
+        startResize();
+      } else {
+        addFiles(items);
+        fileInput.value = '';
+      }
+    });
+
+    // --- File Management ---
+    function addFiles(newFiles) {
+      const existing = new Set(files.map(f => f.name + f.size + f.lastModified));
+      for (const f of newFiles) {
+        const key = f.name + f.size + f.lastModified;
+        if (!existing.has(key)) {
+          files.push(f);
+          existing.add(key);
+        }
+      }
+      renderFileList();
+    }
+
+    function removeFile(index) {
+      files.splice(index, 1);
+      renderFileList();
+    }
+
+    function clearFiles() {
+      files = [];
+      renderFileList();
+      summaryEl.classList.remove('show');
+      progressSection.classList.add('hidden');
+    }
+
+    function renderFileList() {
+      fileList.innerHTML = '';
+      fileCount.textContent = files.length;
+      btnResize.disabled = files.length === 0 || processing;
+
+      if (files.length === 0) {
+        fileListSection.classList.add('hidden');
+        return;
+      }
+
+      fileListSection.classList.remove('hidden');
+
+      files.forEach((file, i) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.dataset.index = i;
+
+        const thumb = document.createElement('img');
+        thumb.className = 'file-thumb';
+        thumb.src = URL.createObjectURL(file);
+        thumb.onload = () => URL.revokeObjectURL(thumb.src);
+
+        const info = document.createElement('div');
+        info.className = 'file-info';
+
+        const name = document.createElement('div');
+        name.className = 'file-name';
+        name.textContent = file.name;
+
+        const meta = document.createElement('div');
+        meta.className = 'file-meta';
+        meta.textContent = formatSize(file.size);
+
+        info.appendChild(name);
+        info.appendChild(meta);
+
+        const status = document.createElement('span');
+        status.className = 'file-status pending';
+        status.textContent = 'Pending';
+        status.id = `status-${i}`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'file-remove';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = 'Remove';
+        removeBtn.onclick = (e) => { e.stopPropagation(); if (!processing) removeFile(i); };
+
+        item.appendChild(thumb);
+        item.appendChild(info);
+        item.appendChild(status);
+        item.appendChild(removeBtn);
+        fileList.appendChild(item);
+      });
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    btnClear.addEventListener('click', clearFiles);
+
+    // No-suffix checkbox
+    document.getElementById('noSuffix').addEventListener('change', function() {
+      document.getElementById('suffix').disabled = this.checked;
+    });
+
+    // Auto-update suffix when width changes (live)
+    document.getElementById('targetWidth').addEventListener('input', function() {
+      const noSuffix = document.getElementById('noSuffix').checked;
+      if (!noSuffix) {
+        document.getElementById('suffix').value = '_w' + this.value;
+      }
+    });
+
+    // Folder picker
+    document.getElementById('btnChooseFolder').addEventListener('click', async function() {
+      try {
+        selectedFolderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        document.getElementById('folderPath').textContent = '📂 ' + selectedFolderHandle.name;
+        document.getElementById('folderPath').style.display = 'inline-block';
+        updateAutoState();
+        if (autoResizeEnabled) {
+          showToast('Folder set — drop files to resize & save instantly!', 'success');
+        } else {
+          showToast('Folder selected. Turn on Auto-Resize to enable drop & save.', 'info');
+        }
+      } catch (e) {
+        // User cancelled picker
+      }
+    });
+
+    // --- Resize Logic ---
+    btnResize.addEventListener('click', startResize);
+
+    // --- Download helper for fallback mode ---
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    async function startResize() {
+      if (processing || files.length === 0) return;
+
+      const useFolder = hasFileSystemAccess && selectedFolderHandle;
+
+      if (hasFileSystemAccess && !selectedFolderHandle) {
+        showToast('Please choose a save folder first.', 'error');
+        return;
+      }
+
+      processing = true;
+      btnResize.disabled = true;
+      summaryEl.classList.remove('show');
+      progressSection.classList.remove('hidden');
+      progressBar.style.width = '0%';
+
+      const targetWidth = parseInt(document.getElementById('targetWidth').value) || 2500;
+      const outputFormat = document.getElementById('outputFormat').value;
+      const quality = (parseInt(document.getElementById('quality').value) || 92) / 100;
+      const noSuffix = document.getElementById('noSuffix').checked;
+      const suffix = noSuffix ? '' : (document.getElementById('suffix').value || '_w2500');
+      const upscaleSmall = document.getElementById('upscaleSmall').checked;
+
+      let processed = 0, skipped = 0, failed = 0;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const statusEl = document.getElementById(`status-${i}`);
+        if (statusEl) {
+          statusEl.className = 'file-status processing';
+          statusEl.textContent = 'Resizing...';
+        }
+
+        try {
+          const result = await resizeImage(file, targetWidth, outputFormat, quality, suffix, upscaleSmall);
+          if (result.skipped) {
+            skipped++;
+            if (statusEl) {
+              statusEl.className = 'file-status skipped';
+              statusEl.textContent = `Skipped (${result.originalWidth}px)`;
+            }
+          } else if (useFolder) {
+            // Save directly to folder (Chromium)
+            if (statusEl) {
+              statusEl.className = 'file-status processing';
+              statusEl.textContent = 'Saving...';
+            }
+            try {
+              const fh = await selectedFolderHandle.getFileHandle(result.filename, { create: true });
+              const writable = await fh.createWritable();
+              await writable.write(result.blob);
+              await writable.close();
+              processed++;
+              if (statusEl) {
+                statusEl.className = 'file-status done';
+                statusEl.textContent = `Saved (${result.newWidth}×${result.newHeight})`;
+              }
+            } catch (e) {
+              console.error('Failed to save:', result.filename, e);
+              failed++;
+              if (statusEl) {
+                statusEl.className = 'file-status error';
+                statusEl.textContent = 'Save failed';
+              }
+            }
+          } else {
+            // Fallback: browser download
+            downloadBlob(result.blob, result.filename);
+            processed++;
+            if (statusEl) {
+              statusEl.className = 'file-status done';
+              statusEl.textContent = `Downloaded (${result.newWidth}×${result.newHeight})`;
+            }
+          }
+        } catch (err) {
+          failed++;
+          console.error(`Failed: ${file.name}`, err);
+          if (statusEl) {
+            statusEl.className = 'file-status error';
+            statusEl.textContent = 'Failed';
+          }
+        }
+
+        const pct = ((i + 1) / files.length) * 100;
+        progressBar.style.width = pct + '%';
+        progressText.textContent = `${i + 1} of ${files.length} processed`;
+      }
+
+      // Summary
+      let statsHTML = '';
+      const verb = useFolder ? 'saved' : 'downloaded';
+      if (processed > 0) statsHTML += `✅ Resized & ${verb}: ${processed} file(s)<br>`;
+      if (skipped > 0) statsHTML += `⏭ Skipped (too small): ${skipped} file(s)<br>`;
+      if (failed > 0) statsHTML += `❌ Failed: ${failed} file(s)<br>`;
+
+      summaryTitle.textContent = failed > 0 ? 'Completed with errors' : 'All done!';
+      summaryStats.innerHTML = statsHTML;
+      summaryEl.classList.add('show');
+
+      if (processed > 0) {
+        const msg = useFolder
+          ? `${processed} photo(s) resized & saved to ${selectedFolderHandle.name}`
+          : `${processed} photo(s) resized & downloaded`;
+        showToast(msg, 'success');
+      }
+
+      progressText.textContent = 'Complete!';
+      processing = false;
+      btnResize.disabled = false;
+
+      // Auto-clear after a short delay in auto mode
+      if (isAutoMode()) {
+        setTimeout(() => {
+          clearFiles();
+        }, 3000);
+      }
+    }
+
+    function resizeImage(file, targetWidth, outputFormat, quality, suffix, upscaleSmall) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const srcW = img.naturalWidth;
+          const srcH = img.naturalHeight;
+
+          if (srcW < targetWidth && !upscaleSmall) {
+            URL.revokeObjectURL(img.src);
+            resolve({ skipped: true, originalWidth: srcW });
+            return;
+          }
+
+          const scale = targetWidth / srcW;
+          const newW = targetWidth;
+          const newH = Math.max(1, Math.round(srcH * scale));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = newW;
+          canvas.height = newH;
+          const ctx = canvas.getContext('2d');
+
+          // Use high-quality resampling
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, newW, newH);
+
+          URL.revokeObjectURL(img.src);
+
+          // Determine output MIME and extension
+          let mime, ext;
+          if (outputFormat === 'original') {
+            mime = file.type || 'image/jpeg';
+            ext = file.name.split('.').pop().toLowerCase();
+            if (ext === 'tif' || ext === 'tiff' || ext === 'bmp') {
+              mime = 'image/png';
+              ext = 'png';
+            }
+          } else {
+            mime = outputFormat;
+            if (mime === 'image/jpeg') ext = 'jpg';
+            else if (mime === 'image/png') ext = 'png';
+            else if (mime === 'image/webp') ext = 'webp';
+            else { ext = 'jpg'; mime = 'image/jpeg'; }
+          }
+
+          const baseName = file.name.replace(/\.[^.]+$/, '');
+          const filename = `${baseName}${suffix}.${ext}`;
+
+          const qualityArg = (mime === 'image/jpeg' || mime === 'image/webp') ? quality : undefined;
+
+          canvas.toBlob(blob => {
+            if (!blob) return reject(new Error('Canvas toBlob failed'));
+            resolve({ blob, filename, newWidth: newW, newHeight: newH, skipped: false });
+          }, mime, qualityArg);
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(img.src);
+          reject(new Error('Failed to load image'));
+        };
+
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    // Init
+    updateAutoState();
+  </script>
+</body>
+</html>
