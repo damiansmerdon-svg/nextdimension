@@ -145,16 +145,16 @@
       box-shadow: 0 0 24px var(--accent-glow);
     }
 
-    .drop-zone.auto-ready {
-      border-color: var(--success);
-      border-style: solid;
-    }
-
-    .drop-zone.auto-ready:hover,
-    .drop-zone.auto-ready.dragover {
+    .drop-zone.auto-on:hover,
+    .drop-zone.auto-on.dragover {
       border-color: var(--success);
       background: rgba(0, 184, 148, 0.10);
       box-shadow: 0 0 32px rgba(0, 184, 148, 0.35);
+    }
+
+    .drop-zone.auto-ready {
+      border-color: var(--success);
+      border-style: solid;
     }
 
     .drop-zone-icon {
@@ -2223,6 +2223,7 @@
         autoToggle.className = 'auto-toggle on';
         document.getElementById('autoToggleIcon').innerHTML = '<span class="pulse"></span>';
         autoToggleText.textContent = 'Drop&Go: ON';
+        dropZone.classList.add('auto-on');
         if (selectedFolderHandle) {
           dropZone.classList.add('auto-ready');
           dropZoneTitle.textContent = 'Drop photos to auto-resize & save';
@@ -2234,6 +2235,7 @@
         autoToggle.className = 'auto-toggle off';
         document.getElementById('autoToggleIcon').innerHTML = '⚡';
         autoToggleText.textContent = 'Drop&Go: OFF';
+        dropZone.classList.remove('auto-on');
         dropZone.classList.remove('auto-ready');
         dropZoneTitle.textContent = 'Drop photos here or click to browse';
       }
