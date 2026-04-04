@@ -231,6 +231,20 @@
       flex-wrap: wrap;
     }
 
+    .file-thumb-wrap {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+
+    .file-thumb-wrap canvas {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      background: var(--surface2);
+    }
+
     .upscale-hint {
       font-size: 0.75rem;
       color: var(--text-dim);
@@ -1483,6 +1497,16 @@
         </select>
       </div>
       <div class="option-group">
+        <label>Smart Crop</label>
+        <select id="smartCropMode">
+          <option value="off">Off</option>
+          <option value="1:1">1:1 Smart</option>
+          <option value="16:9">16:9 Smart</option>
+          <option value="9:16">9:16 Smart</option>
+          <option value="4:5">4:5 Smart</option>
+        </select>
+      </div>
+      <div class="option-group">
         <label>Filename Suffix</label>
         <div class="suffix-row">
           <input type="text" id="suffix" value="_w2500">
@@ -1559,6 +1583,7 @@
       <ul>
         <li><strong>4 resize modes</strong> — By Width, By Height, By Percentage, or Compress Only</li>
         <li><strong>Per-image crop</strong> — Free, 1:1, 16:9, or 9:16 aspect ratios</li>
+        <li><strong>Smart Crop</strong> — Auto-detect faces & subjects, batch crop to 1:1, 16:9, 9:16, or 4:5 with preview thumbnails</li>
         <li><strong>Color Enhance</strong> — Auto (adaptive correction) or Vivid (creative boost)</li>
         <li><strong>Smart & AI Upscale</strong> — Enhance small images with Smart sharpening or AI super-resolution (4× max)</li>
         <li><strong>Custom DPI</strong> — Set output DPI (72 / 150 / 300) under Advanced</li>
@@ -1727,6 +1752,243 @@
     let dragCounter = 0;
     let currentMode = 'width';
     let cropData = {}; // per-file crop info keyed by index
+    let smartCropResults = {}; // per-file smart crop rects { x, y, w, h } in image coords
+    const smartCropModeEl = document.getElementById('smartCropMode');
+
+    // --- Smart Crop Engine ---
+    // Face detection: use browser FaceDetector API (Chromium), saliency fallback otherwise
+    const hasFaceDetector = typeof window.FaceDetector !== 'undefined';
+    let faceDetectorInstance = null;
+
+    async function detectFaces(imgEl) {
+      if (!hasFaceDetector) return [];
+      try {
+        if (!faceDetectorInstance) faceDetectorInstance = new FaceDetector({ maxDetectedFaces: 10, fastMode: true });
+        const faces = await faceDetectorInstance.detect(imgEl);
+        return faces.map(f => ({
+          x: f.boundingBox.x,
+          y: f.boundingBox.y,
+          w: f.boundingBox.width,
+          h: f.boundingBox.height
+        }));
+      } catch (e) {
+        console.warn('FaceDetector failed:', e);
+        return [];
+      }
+    }
+
+    function detectSaliencyCenter(imgEl) {
+      // Compute center of visual interest via luminance gradient magnitude
+      const w = Math.min(imgEl.naturalWidth, 200); // downscale for speed
+      const h = Math.round(w * (imgEl.naturalHeight / imgEl.naturalWidth));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(imgEl, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+
+      let totalWeight = 0, sumX = 0, sumY = 0;
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const idx = (y * w + x) * 4;
+          const lum = data[idx] * 0.299 + data[idx+1] * 0.587 + data[idx+2] * 0.114;
+          // Horizontal and vertical gradient
+          const idxL = (y * w + (x-1)) * 4;
+          const idxR = (y * w + (x+1)) * 4;
+          const idxU = ((y-1) * w + x) * 4;
+          const idxD = ((y+1) * w + x) * 4;
+          const lumL = data[idxL]*0.299 + data[idxL+1]*0.587 + data[idxL+2]*0.114;
+          const lumR = data[idxR]*0.299 + data[idxR+1]*0.587 + data[idxR+2]*0.114;
+          const lumU = data[idxU]*0.299 + data[idxU+1]*0.587 + data[idxU+2]*0.114;
+          const lumD = data[idxD]*0.299 + data[idxD+1]*0.587 + data[idxD+2]*0.114;
+          const grad = Math.abs(lumR - lumL) + Math.abs(lumD - lumU);
+          // Also weight by saturation (colorful areas are interesting)
+          const max = Math.max(data[idx], data[idx+1], data[idx+2]);
+          const min = Math.min(data[idx], data[idx+1], data[idx+2]);
+          const sat = max > 0 ? (max - min) / max : 0;
+          const weight = grad + sat * 50;
+          totalWeight += weight;
+          sumX += x * weight;
+          sumY += y * weight;
+        }
+      }
+
+      if (totalWeight === 0) return { cx: 0.5, cy: 0.5 };
+      // Return as 0-1 normalized coordinates
+      return {
+        cx: (sumX / totalWeight) / w,
+        cy: (sumY / totalWeight) / h
+      };
+    }
+
+    function computeSmartCropRect(imgW, imgH, ratioStr, faces, saliency) {
+      const [rw, rh] = ratioStr.split(':').map(Number);
+      const ratio = rw / rh;
+
+      // Calculate max crop rect size that fits within the image at this ratio
+      let cropW, cropH;
+      if (imgW / imgH > ratio) {
+        // Image is wider than target ratio — crop width
+        cropH = imgH;
+        cropW = Math.round(imgH * ratio);
+      } else {
+        // Image is taller than target ratio — crop height
+        cropW = imgW;
+        cropH = Math.round(imgW / ratio);
+      }
+
+      // Find subject center
+      let cx, cy;
+      if (faces.length > 0) {
+        // Center on the midpoint of all faces
+        let fxSum = 0, fySum = 0;
+        for (const f of faces) {
+          fxSum += f.x + f.w / 2;
+          fySum += f.y + f.h / 2;
+        }
+        cx = fxSum / faces.length;
+        cy = fySum / faces.length;
+      } else {
+        // Use saliency center
+        cx = saliency.cx * imgW;
+        cy = saliency.cy * imgH;
+      }
+
+      // Position crop centered on subject
+      let cropX = Math.round(cx - cropW / 2);
+      let cropY = Math.round(cy - cropH / 2);
+
+      // Face safety: ensure all faces are inside the crop with padding
+      if (faces.length > 0) {
+        const pad = 0.15; // 15% padding above heads
+        let facesMinX = Infinity, facesMinY = Infinity, facesMaxX = 0, facesMaxY = 0;
+        for (const f of faces) {
+          facesMinX = Math.min(facesMinX, f.x);
+          facesMinY = Math.min(facesMinY, f.y - f.h * pad); // extra above head
+          facesMaxX = Math.max(facesMaxX, f.x + f.w);
+          facesMaxY = Math.max(facesMaxY, f.y + f.h);
+        }
+        // Shift crop to include all faces
+        if (cropX > facesMinX) cropX = Math.round(facesMinX);
+        if (cropY > facesMinY) cropY = Math.round(facesMinY);
+        if (cropX + cropW < facesMaxX) cropX = Math.round(facesMaxX - cropW);
+        if (cropY + cropH < facesMaxY) cropY = Math.round(facesMaxY - cropH);
+      }
+
+      // Clamp to image bounds
+      cropX = Math.max(0, Math.min(imgW - cropW, cropX));
+      cropY = Math.max(0, Math.min(imgH - cropH, cropY));
+
+      // Safety: don't crop more than 50% of image area
+      const cropArea = cropW * cropH;
+      const imgArea = imgW * imgH;
+      if (cropArea < imgArea * 0.5) {
+        // Crop is too aggressive — expand to at least 50% of image
+        const scale = Math.sqrt((imgArea * 0.5) / cropArea);
+        cropW = Math.min(imgW, Math.round(cropW * scale));
+        cropH = Math.min(imgH, Math.round(cropW / ratio));
+        cropX = Math.max(0, Math.min(imgW - cropW, cropX));
+        cropY = Math.max(0, Math.min(imgH - cropH, cropY));
+      }
+
+      return { x: cropX, y: cropY, w: cropW, h: cropH };
+    }
+
+    async function analyzeImageForSmartCrop(file, index) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = async () => {
+          const faces = await detectFaces(img);
+          const saliency = detectSaliencyCenter(img);
+          const ratioStr = smartCropModeEl.value;
+          if (ratioStr === 'off') { URL.revokeObjectURL(img.src); resolve(null); return; }
+          const rect = computeSmartCropRect(img.naturalWidth, img.naturalHeight, ratioStr, faces, saliency);
+          smartCropResults[index] = rect;
+          URL.revokeObjectURL(img.src);
+          resolve(rect);
+        };
+        img.onerror = () => { URL.revokeObjectURL(img.src); resolve(null); };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    async function runSmartCropAnalysis() {
+      const mode = smartCropModeEl.value;
+      if (mode === 'off') {
+        smartCropResults = {};
+        renderFileList();
+        return;
+      }
+      for (let i = 0; i < files.length; i++) {
+        if (!cropData[i]) { // Don't override manual crops
+          await analyzeImageForSmartCrop(files[i], i);
+        }
+      }
+      renderFileList();
+    }
+
+    smartCropModeEl.addEventListener('change', () => {
+      runSmartCropAnalysis();
+    });
+
+    function drawSmartCropThumb(canvas, file, cropRect) {
+      const img = new Image();
+      img.onload = () => {
+        const size = 80; // draw at 2x for retina
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const imgW = img.naturalWidth;
+        const imgH = img.naturalHeight;
+
+        // Draw full image dimmed
+        ctx.globalAlpha = 0.25;
+        // Fit full image into square
+        const fitScale = Math.min(size / imgW, size / imgH);
+        const drawW = imgW * fitScale;
+        const drawH = imgH * fitScale;
+        const offX = (size - drawW) / 2;
+        const offY = (size - drawH) / 2;
+        ctx.drawImage(img, 0, 0, imgW, imgH, offX, offY, drawW, drawH);
+
+        // Draw crop region bright
+        ctx.globalAlpha = 1.0;
+        const cx = offX + cropRect.x * fitScale;
+        const cy = offY + cropRect.y * fitScale;
+        const cw = cropRect.w * fitScale;
+        const ch = cropRect.h * fitScale;
+        ctx.drawImage(img, cropRect.x, cropRect.y, cropRect.w, cropRect.h, cx, cy, cw, ch);
+
+        // Draw crop border
+        ctx.strokeStyle = '#6c5ce7';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(cx, cy, cw, ch);
+
+        URL.revokeObjectURL(img.src);
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    async function applySmartCropToFile(file, rect) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = rect.w;
+          canvas.height = rect.h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h);
+          URL.revokeObjectURL(img.src);
+          const mime = file.type || 'image/jpeg';
+          canvas.toBlob(blob => {
+            if (!blob) return reject(new Error('Smart crop toBlob failed'));
+            resolve(new File([blob], file.name, { type: mime }));
+          }, mime, 0.95);
+        };
+        img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error('Failed to load image for smart crop')); };
+        img.src = URL.createObjectURL(file);
+      });
+    }
 
     // --- Resize Mode Switching ---
     const modeButtons = document.querySelectorAll('.mode-btn');
@@ -2050,6 +2312,7 @@
     // --- File Management ---
     function addFiles(newFiles) {
       const existing = new Set(files.map(f => f.name + f.size + f.lastModified));
+      const startIdx = files.length;
       for (const f of newFiles) {
         const key = f.name + f.size + f.lastModified;
         if (!existing.has(key)) {
@@ -2058,6 +2321,15 @@
         }
       }
       renderFileList();
+      // Run smart crop analysis on new files if enabled
+      if (smartCropModeEl.value !== 'off') {
+        (async () => {
+          for (let i = startIdx; i < files.length; i++) {
+            await analyzeImageForSmartCrop(files[i], i);
+          }
+          renderFileList();
+        })();
+      }
     }
 
     function removeFile(index) {
@@ -2068,6 +2340,7 @@
     function clearFiles() {
       files = [];
       cropData = {};
+      smartCropResults = {};
       renderFileList();
       summaryEl.classList.remove('show');
       progressSection.classList.add('hidden');
@@ -2090,21 +2363,33 @@
         item.className = 'file-item';
         item.dataset.index = i;
 
-        const thumb = document.createElement('img');
-        thumb.className = 'file-thumb';
-        if (isHeicFile(file)) {
-          thumb.src = ''; // placeholder while converting
-          thumb.alt = 'HEIC';
-          (async () => {
-            try {
-              const jpgBlob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.5 });
-              thumb.src = URL.createObjectURL(jpgBlob);
-              thumb.onload = () => URL.revokeObjectURL(thumb.src);
-            } catch (e) { /* silent fail — no thumbnail for this HEIC */ }
-          })();
+        // Thumbnail: use canvas with crop overlay if smart crop active, else normal img
+        let thumbEl;
+        if (smartCropResults[i] && !cropData[i]) {
+          const wrap = document.createElement('div');
+          wrap.className = 'file-thumb-wrap';
+          const canvas = document.createElement('canvas');
+          drawSmartCropThumb(canvas, file, smartCropResults[i]);
+          wrap.appendChild(canvas);
+          thumbEl = wrap;
         } else {
-          thumb.src = URL.createObjectURL(file);
-          thumb.onload = () => URL.revokeObjectURL(thumb.src);
+          const thumb = document.createElement('img');
+          thumb.className = 'file-thumb';
+          if (isHeicFile(file)) {
+            thumb.src = ''; // placeholder while converting
+            thumb.alt = 'HEIC';
+            (async () => {
+              try {
+                const jpgBlob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.5 });
+                thumb.src = URL.createObjectURL(jpgBlob);
+                thumb.onload = () => URL.revokeObjectURL(thumb.src);
+              } catch (e) { /* silent fail — no thumbnail for this HEIC */ }
+            })();
+          } else {
+            thumb.src = URL.createObjectURL(file);
+            thumb.onload = () => URL.revokeObjectURL(thumb.src);
+          }
+          thumbEl = thumb;
         }
 
         const info = document.createElement('div');
@@ -2138,7 +2423,7 @@
         removeBtn.title = 'Remove';
         removeBtn.onclick = (e) => { e.stopPropagation(); if (!processing) removeFile(i); };
 
-        item.appendChild(thumb);
+        item.appendChild(thumbEl);
         item.appendChild(info);
         item.appendChild(cropBtn);
         item.appendChild(status);
@@ -2266,6 +2551,16 @@
               continue;
             }
           }
+          // Apply smart crop if enabled and no manual crop
+          if (smartCropResults[i] && !cropData[i]) {
+            if (statusEl) statusEl.textContent = 'Smart cropping...';
+            try {
+              file = await applySmartCropToFile(file, smartCropResults[i]);
+            } catch (cropErr) {
+              console.warn('Smart crop failed for', files[i].name, cropErr);
+            }
+          }
+
           const result = await resizeImage(file, mode, targetDim, targetPct, outputFormat, quality, suffix, upscaleMode, dpi, colorEnhance, statusEl);
           if (result.skipped) {
             skipped++;
@@ -3111,10 +3406,29 @@
         cropDisplayW = cropImage.clientWidth;
         cropDisplayH = cropImage.clientHeight;
 
-        // Default: select entire image
-        cropRect = { x: 0, y: 0, w: cropDisplayW, h: cropDisplayH };
-        cropRatio = null;
-        document.querySelectorAll('.ratio-btn').forEach(b => b.classList.toggle('active', b.dataset.ratio === 'free'));
+        const smartMode = smartCropModeEl.value;
+        const smartRect = smartCropResults[cropFileIndex];
+
+        if (smartMode !== 'off' && smartRect && !cropData[cropFileIndex]) {
+          // Pre-position to smart crop rect
+          const scaleX = cropDisplayW / cropImgW;
+          const scaleY = cropDisplayH / cropImgH;
+          cropRect = {
+            x: smartRect.x * scaleX,
+            y: smartRect.y * scaleY,
+            w: smartRect.w * scaleX,
+            h: smartRect.h * scaleY
+          };
+          // Set ratio to match smart crop setting
+          const [rw, rh] = smartMode.split(':').map(Number);
+          cropRatio = rw / rh;
+          document.querySelectorAll('.ratio-btn').forEach(b => b.classList.toggle('active', b.dataset.ratio === smartMode));
+        } else {
+          // Default: select entire image
+          cropRect = { x: 0, y: 0, w: cropDisplayW, h: cropDisplayH };
+          cropRatio = null;
+          document.querySelectorAll('.ratio-btn').forEach(b => b.classList.toggle('active', b.dataset.ratio === 'free'));
+        }
         updateCropSelection();
       };
       cropImage.src = url;
