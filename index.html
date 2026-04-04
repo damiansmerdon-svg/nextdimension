@@ -1603,35 +1603,38 @@
     <article class="modal">
       <button class="modal-close" id="closeBigPicture" type="button">&times;</button>
       <h2>The Big Picture — Why NextDimension Exists</h2>
-      <p>Ever started importing huge photos into After Effects and watched your RAM get chewed up? A single 6000px photo from a DSLR uses far more memory than a 2500px version of the same image. Multiply that across dozens of stills in a composition and After Effects slows to a crawl — or crashes entirely.</p>
+      <p>NextDimension was built to solve a simple but frustrating problem: oversized photos slow down workflows. Whether you are preparing stills for After Effects, editing video, organising social media content, optimising website images, or just working through a folder full of large photos, image prep should not be the part that wastes your time.</p>
 
-      <p>NextDimension was built for exactly that moment. It lets you batch resize photos fast by custom width while keeping their natural aspect ratio. No uploads, no installs, no cloud processing. Everything runs 100% in your browser, so your photos never leave your device.</p>
+      <p>NextDimension makes that process fast and straightforward. It is a free batch photo tool that runs entirely in your browser and lets you resize, smart crop, enhance, compress, convert, and upscale photos in seconds. Set your options once, drop in your files, and process everything in one smooth pass. No uploads, no installs, no accounts.</p>
 
-      <h3>Built for After Effects &amp; motion design workflows</h3>
+      <h3>Built for real-world workflows</h3>
+      <p>NextDimension is designed for practical use:</p>
       <ul>
-        <li>Prep oversized stills before importing into After Effects</li>
-        <li>Reduce RAM pressure when working with photo-heavy compositions</li>
-        <li>Batch resize dozens of images to a consistent width in seconds</li>
-        <li>Keep natural proportions — no cropping, no stretching</li>
-        <li>Perfect for video editors, motion designers, and content creators</li>
+        <li>Batch resize photos by width, height, percentage, or compression-only mode</li>
+        <li>Smart crop images to strong aspect ratios like 1:1, 16:9, 9:16, and 4:5</li>
+        <li>Apply Smart Enhance with Auto or Vivid color correction</li>
+        <li>Upscale smaller images with Smart or AI Upscale</li>
+        <li>Convert formats to JPG, PNG, or WebP with compression control</li>
+        <li>Handle HEIC and HEIF images from iPhones automatically</li>
+        <li>Set output DPI when needed for different delivery requirements</li>
       </ul>
+      <p>That makes it useful not just for motion designers and video editors, but also for creators, marketers, web designers, and anyone who needs a clean, repeatable batch photo workflow.</p>
 
-      <h3>How it works</h3>
+      <h3>Simple workflow, fast results</h3>
+      <p>Using NextDimension is straightforward:</p>
       <ul>
-        <li>Drop your photos (JPG, PNG, WebP, BMP, TIFF)</li>
-        <li>Set your target width (e.g. 2500px for HD comps)</li>
-        <li>Choose output format and quality</li>
-        <li>Hit resize — files are saved directly to your chosen folder</li>
+        <li>Drop in your photos</li>
+        <li>Choose your resize, crop, enhancement, compression, conversion, and output settings</li>
+        <li>Save directly to your chosen folder or download the results depending on browser support</li>
+        <li>Move on with your work</li>
       </ul>
+      <p>No bloated software. No cloud processing. No unnecessary steps. Just a fast set-and-drop workflow built to get image prep out of the way quickly.</p>
 
-      <h3>Why resize instead of just scaling in After Effects?</h3>
-      <p>After Effects loads every pixel of every image into RAM. A 6000×4000 photo takes up roughly 96 MB of uncompressed memory. Scale that down to 2500px wide and it drops to around 16 MB — six times less RAM per image. Across a 30-image slideshow, that is the difference between a smooth timeline and a project that stutters on every frame.</p>
+      <h3>Private by design</h3>
+      <p>NextDimension runs 100% locally in your browser. Your photos never leave your device. There are no uploads, no external AI services, no cloud processing, and no account required. That makes it fast, private, and easy to trust.</p>
 
-      <h3>Privacy first</h3>
-      <p>NextDimension processes everything locally using your browser's Canvas API. No files are uploaded anywhere. No analytics track your images. No account is needed. Your photos stay on your machine from start to finish.</p>
-
-      <h3>Free, open, and lightweight</h3>
-      <p>NextDimension is a single HTML file. No frameworks, no dependencies, no build tools. You can download it, bookmark it, or host it yourself. It is free to use for personal and commercial projects with no limits on file count or image size.</p>
+      <h3>Lightweight, flexible, and easy to keep</h3>
+      <p>NextDimension is built to stay simple. You can use it online, save it for offline use, bookmark it for quick access, or keep it as a handy local utility whenever you need it. It is a small, focused tool built to remove friction from a common task and help you get back to the real work faster.</p>
     </article>
   </div>
 
@@ -2286,6 +2289,10 @@
       if (isAutoMode()) {
         // Auto-resize mode: add files, run smart crop, then auto-process
         addFiles(items).then(() => startResize());
+      } else if (autoResizeEnabled && !selectedFolderHandle) {
+        // Drop&Go ON but no folder yet
+        addFiles(items);
+        showToast('Drop&Go needs a save folder — choose one below to get started.', 'warning');
       } else {
         addFiles(items);
         if (hasFileSystemAccess && !selectedFolderHandle && !folderToastShown) {
@@ -2303,6 +2310,10 @@
       if (isAutoMode()) {
         fileInput.value = '';
         addFiles(items).then(() => startResize());
+      } else if (autoResizeEnabled && !selectedFolderHandle) {
+        addFiles(items);
+        fileInput.value = '';
+        showToast('Drop&Go needs a save folder — choose one below to get started.', 'warning');
       } else {
         addFiles(items);
         fileInput.value = '';
