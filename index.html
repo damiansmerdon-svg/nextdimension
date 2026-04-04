@@ -2283,9 +2283,8 @@
       if (items.length === 0) return;
 
       if (isAutoMode()) {
-        // Auto-resize mode: add files, show them, then auto-process
-        addFiles(items);
-        startResize();
+        // Auto-resize mode: add files, run smart crop, then auto-process
+        addFiles(items).then(() => startResize());
       } else {
         addFiles(items);
       }
@@ -2297,9 +2296,8 @@
       if (items.length === 0) { fileInput.value = ''; return; }
 
       if (isAutoMode()) {
-        addFiles(items);
         fileInput.value = '';
-        startResize();
+        addFiles(items).then(() => startResize());
       } else {
         addFiles(items);
         fileInput.value = '';
@@ -2307,7 +2305,7 @@
     });
 
     // --- File Management ---
-    function addFiles(newFiles) {
+    async function addFiles(newFiles) {
       const existing = new Set(files.map(f => f.name + f.size + f.lastModified));
       const startIdx = files.length;
       for (const f of newFiles) {
@@ -2320,12 +2318,10 @@
       renderFileList();
       // Run smart crop analysis on new files if enabled
       if (smartCropModeEl.value !== 'off') {
-        (async () => {
-          for (let i = startIdx; i < files.length; i++) {
-            await analyzeImageForSmartCrop(files[i], i);
-          }
-          renderFileList();
-        })();
+        for (let i = startIdx; i < files.length; i++) {
+          await analyzeImageForSmartCrop(files[i], i);
+        }
+        renderFileList();
       }
     }
 
