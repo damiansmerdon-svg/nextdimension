@@ -145,6 +145,12 @@
       box-shadow: 0 0 24px var(--accent-glow);
     }
 
+    .drop-zone.auto-ready.dragover {
+      border-color: var(--success);
+      background: rgba(0, 184, 148, 0.10);
+      box-shadow: 0 0 32px rgba(0, 184, 148, 0.35);
+    }
+
     .drop-zone.auto-ready {
       border-color: var(--success);
       border-style: solid;
@@ -710,28 +716,6 @@
 
     .help-link:hover {
       opacity: 0.8;
-    }
-
-    .help-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      font-size: 0.82rem;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-
-    .help-icon:hover {
-      border-color: var(--accent);
-      color: var(--accent);
     }
 
     /* Modal */
@@ -1433,10 +1417,9 @@
       <div class="header-links">
         <a class="help-link" id="openHelp">Why NextDimension?</a>
         <a class="help-link" id="openBigPicture">The Big Picture</a>
-        <button class="help-icon" id="openHelpIcon" type="button" title="Help">ℹ</button>
       </div>
       <button class="auto-toggle off" id="autoToggle" type="button">
-        <span id="autoToggleIcon">⚡</span> <span id="autoToggleText">Auto-Resize: OFF</span>
+        <span id="autoToggleIcon">⚡</span> <span id="autoToggleText">Drop&Go: OFF</span>
       </button>
     </header>
 
@@ -1841,7 +1824,6 @@
     }
 
     document.getElementById('openHelp').addEventListener('click', openModal);
-    document.getElementById('openHelpIcon').addEventListener('click', openModal);
     document.getElementById('closeHelp').addEventListener('click', closeModal);
 
     helpModal.addEventListener('click', e => {
@@ -1983,7 +1965,7 @@
       if (autoResizeEnabled) {
         autoToggle.className = 'auto-toggle on';
         document.getElementById('autoToggleIcon').innerHTML = '<span class="pulse"></span>';
-        autoToggleText.textContent = 'Auto-Resize: ON';
+        autoToggleText.textContent = 'Drop&Go: ON';
         if (selectedFolderHandle) {
           dropZone.classList.add('auto-ready');
           dropZoneTitle.textContent = 'Drop photos to auto-resize & save';
@@ -1994,7 +1976,7 @@
       } else {
         autoToggle.className = 'auto-toggle off';
         document.getElementById('autoToggleIcon').innerHTML = '⚡';
-        autoToggleText.textContent = 'Auto-Resize: OFF';
+        autoToggleText.textContent = 'Drop&Go: OFF';
         dropZone.classList.remove('auto-ready');
         dropZoneTitle.textContent = 'Drop photos here or click to browse';
       }
@@ -2006,9 +1988,9 @@
       if (autoResizeEnabled && !selectedFolderHandle) {
         showToast('Now choose a save folder to complete setup', 'info');
       } else if (autoResizeEnabled && selectedFolderHandle) {
-        showToast('Auto-resize ON — drop files to resize & save instantly', 'success');
+        showToast('Drop&Go ON — drop files to resize & save instantly', 'success');
       } else {
-        showToast('Auto-resize OFF — use the button to resize manually', 'info');
+        showToast('Drop&Go OFF — use the button to resize manually', 'info');
       }
     });
 
@@ -2110,8 +2092,20 @@
 
         const thumb = document.createElement('img');
         thumb.className = 'file-thumb';
-        thumb.src = URL.createObjectURL(file);
-        thumb.onload = () => URL.revokeObjectURL(thumb.src);
+        if (isHeicFile(file)) {
+          thumb.src = ''; // placeholder while converting
+          thumb.alt = 'HEIC';
+          (async () => {
+            try {
+              const jpgBlob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.5 });
+              thumb.src = URL.createObjectURL(jpgBlob);
+              thumb.onload = () => URL.revokeObjectURL(thumb.src);
+            } catch (e) { /* silent fail — no thumbnail for this HEIC */ }
+          })();
+        } else {
+          thumb.src = URL.createObjectURL(file);
+          thumb.onload = () => URL.revokeObjectURL(thumb.src);
+        }
 
         const info = document.createElement('div');
         info.className = 'file-info';
