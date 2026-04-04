@@ -1745,6 +1745,7 @@
     let selectedFolderHandle = null;
     let autoResizeEnabled = false;
     let dragCounter = 0;
+    let folderToastShown = false;
     let currentMode = 'width';
     let cropData = {}; // per-file crop info keyed by index
     let smartCropResults = {}; // per-file smart crop rects { x, y, w, h } in image coords
@@ -2287,6 +2288,10 @@
         addFiles(items).then(() => startResize());
       } else {
         addFiles(items);
+        if (hasFileSystemAccess && !selectedFolderHandle && !folderToastShown) {
+          folderToastShown = true;
+          showToast('Tip: Choose a save folder so your photos save automatically.', 'info');
+        }
       }
     });
 
@@ -2301,6 +2306,10 @@
       } else {
         addFiles(items);
         fileInput.value = '';
+        if (hasFileSystemAccess && !selectedFolderHandle && !folderToastShown) {
+          folderToastShown = true;
+          showToast('Tip: Choose a save folder so your photos save automatically.', 'info');
+        }
       }
     });
 
